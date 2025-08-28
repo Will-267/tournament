@@ -1,45 +1,30 @@
-import { Tournament, User } from '../types';
+import { Tournament } from '../types';
+import { api } from '../apiClient';
 
-// User Management
-export const getUsers = (): User[] => {
+// Tournament Management via API
+export const getTournaments = async (): Promise<Tournament[]> => {
+    return api.get<Tournament[]>('/tournaments');
+};
+
+export const getTournamentById = async (id: string): Promise<Tournament | null> => {
     try {
-        const users = localStorage.getItem('users');
-        return users ? JSON.parse(users) : [];
+        return await api.get<Tournament>(`/tournaments/${id}`);
     } catch (e) {
-        return [];
+        console.error('Failed to fetch tournament', e);
+        return null;
     }
 };
 
-export const saveUsers = (users: User[]): void => {
-    localStorage.setItem('users', JSON.stringify(users));
-};
-
-// Tournament Management
-export const getTournaments = (): Tournament[] => {
-    try {
-        const tournaments = localStorage.getItem('tournaments');
-        return tournaments ? JSON.parse(tournaments) : [];
-    } catch (e) {
-        return [];
-    }
-};
-
-export const saveTournaments = (tournaments: Tournament[]): void => {
-    localStorage.setItem('tournaments', JSON.stringify(tournaments));
-};
-
-export const getTournamentById = (id: string): Tournament | null => {
-    const tournaments = getTournaments();
-    return tournaments.find(t => t.id === id) || null;
-};
-
-export const saveTournament = (tournament: Tournament): void => {
-    const tournaments = getTournaments();
-    const index = tournaments.findIndex(t => t.id === tournament.id);
-    if (index > -1) {
-        tournaments[index] = tournament;
+export const saveTournament = async (tournament: Tournament): Promise<Tournament> => {
+    if (tournaments.some(t => t.id === tournament.id)) {
+        // Existing tournament, use PUT to update
+        return api.put<Tournament>(`/tournaments/${tournament.id}`, tournament);
     } else {
-        tournaments.push(tournament);
+        // New tournament, use POST to create
+        return api.post<Tournament>('/tournaments', tournament);
     }
-    saveTournaments(tournaments);
 };
+
+// Local cache to determine if a tournament is new or existing for save logic
+let tournaments: Tournament[] = [];
+getTournaments().then(data => tournaments = data);

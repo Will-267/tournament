@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { getTournaments, saveTournament } from './utils/storage';
 import { User, Tournament, TournamentStage, RegistrationType } from './types';
 import { logout } from './utils/auth';
@@ -8,19 +8,25 @@ interface DashboardProps {
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
-    const [tournaments, setTournaments] = useState<Tournament[]>(getTournaments());
+    const [tournaments, setTournaments] = useState<Tournament[]>([]);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newTournamentName, setNewTournamentName] = useState('');
     const [registrationType, setRegistrationType] = useState<RegistrationType>('LOBBY');
 
+    useEffect(() => {
+        const fetchTournaments = async () => {
+            const data = await getTournaments();
+            setTournaments(data);
+        };
+        fetchTournaments();
+    }, []);
 
-    const handleCreateTournament = (e: React.FormEvent) => {
+    const handleCreateTournament = async (e: React.FormEvent) => {
         e.preventDefault();
         const trimmedName = newTournamentName.trim();
         if (!trimmedName) return;
 
-        const newTournament: Tournament = {
-            id: Date.now().toString(36) + Math.random().toString(36).substring(2),
+        const newTournamentData: Omit<Tournament, 'id'> = {
             name: trimmedName,
             createdBy: currentUser.username,
             stage: TournamentStage.REGISTRATION,
@@ -30,12 +36,14 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
             matches: [],
             knockoutMatches: { rounds: [] },
         };
-
-        saveTournament(newTournament);
-        setTournaments(getTournaments());
+        
+        // The backend will generate the ID
+        const createdTournament = await saveTournament(newTournamentData as Tournament);
+        
+        setTournaments(prev => [...prev, createdTournament]);
         setShowCreateModal(false);
         setNewTournamentName('');
-        window.location.hash = `#/tournaments/${newTournament.id}`;
+        window.location.hash = `#/tournaments/${createdTournament.id}`;
     };
     
     const getStatusInfo = (t: Tournament): {text: string, color: string} => {

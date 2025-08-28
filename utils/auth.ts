@@ -1,36 +1,38 @@
-import { getUsers, saveUsers } from './storage';
+import { api } from '../apiClient';
 
 export interface User {
     id: string;
     username: string;
-    password?: string; // Only used for creation, not stored in session
+}
+
+interface AuthResponse {
+    user: User;
+    message: string;
 }
 
 const SESSION_KEY = 'currentUser';
 
-export const signUp = (username: string, password_raw: string): { success: boolean, message: string } => {
-    const users = getUsers();
-    if (users.find(u => u.username.toLowerCase() === username.toLowerCase())) {
-        return { success: false, message: 'Username already exists.' };
+export const signUp = async (username: string, password_raw: string): Promise<{ success: boolean, message: string }> => {
+    try {
+        const response = await api.post<{ message: string }>('/auth/signup', { username, password: password_raw });
+        return { success: true, message: response.message };
+    } catch (error: any) {
+        return { success: false, message: error.message };
     }
-    // In a real app, hash the password. Here we simulate.
-    const newUser = { id: `u${Date.now()}`, username, password: password_raw };
-    saveUsers([...users, newUser]);
-    return { success: true, message: 'Sign up successful! Please log in.' };
 };
 
-export const login = (username: string, password_raw: string): { success: boolean, user: User | null, message: string } => {
-    const users = getUsers();
-    // This is NOT secure. For simulation purposes only.
-    const user = users.find(u => u.username.toLowerCase() === username.toLowerCase() && (u as any).password === password_raw);
-
-    if (user) {
-        const sessionUser: User = { id: user.id, username: user.username };
-        sessionStorage.setItem(SESSION_KEY, JSON.stringify(sessionUser));
-        window.dispatchEvent(new CustomEvent('auth-change'));
-        return { success: true, user: sessionUser, message: 'Login successful' };
+export const login = async (username: string, password_raw: string): Promise<{ success: boolean, user: User | null, message: string }> => {
+    try {
+        const response = await api.post<AuthResponse>('/auth/login', { username, password: password_raw });
+        if (response.user) {
+            sessionStorage.setItem(SESSION_KEY, JSON.stringify(response.user));
+            window.dispatchEvent(new CustomEvent('auth-change'));
+            return { success: true, user: response.user, message: response.message };
+        }
+        return { success: false, user: null, message: 'Login failed.' };
+    } catch (error: any) {
+         return { success: false, user: null, message: error.message };
     }
-    return { success: false, user: null, message: 'Invalid username or password.' };
 };
 
 export const logout = (): void => {

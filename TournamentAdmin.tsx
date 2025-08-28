@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Tournament, Match, TournamentStage, Player, Group } from './types';
 import { generateGroupsAndFixtures, generateFixturesForGroups, calculateAllStandings, determineKnockoutQualifiers, generateKnockoutBracket } from './utils/tournament';
-import { saveTournament } from './utils/storage';
 import { TrophyIcon, ArrowRightIcon, UsersIcon, CloseIcon } from './components/IconComponents';
 import GroupStageView from './components/GroupStageView';
 import KnockoutBracket from './components/KnockoutBracket';
@@ -11,7 +10,7 @@ const MIN_PLAYERS = 4;
 
 interface TournamentHostViewProps {
     tournament: Tournament;
-    onTournamentUpdate: (updatedTournament: Tournament) => void;
+    onTournamentUpdate: (updatedTournament: Tournament) => Promise<void>;
 }
 
 const LobbyRegistration: React.FC<{ tournament: Tournament, onStart: () => void }> = ({ tournament, onStart }) => (
@@ -176,11 +175,6 @@ const TournamentHostView: React.FC<TournamentHostViewProps> = ({ tournament, onT
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
 
-    const handleManualUpdateAndSave = (updatedTournament: Tournament) => {
-        onTournamentUpdate(updatedTournament);
-        saveTournament(updatedTournament);
-    }
-
     const startTournament = () => {
         if (tournament.players.length < MIN_PLAYERS) {
             alert(`You need at least ${MIN_PLAYERS} players to start the tournament.`);
@@ -202,7 +196,6 @@ const TournamentHostView: React.FC<TournamentHostViewProps> = ({ tournament, onT
         }
         
         onTournamentUpdate(updatedTournament);
-        saveTournament(updatedTournament);
     };
 
     const standings = useMemo(() => {
@@ -257,7 +250,6 @@ const TournamentHostView: React.FC<TournamentHostViewProps> = ({ tournament, onT
         }
 
         onTournamentUpdate(updatedTournament);
-        saveTournament(updatedTournament);
         setIsModalOpen(false);
         setSelectedMatch(null);
     };
@@ -278,7 +270,6 @@ const TournamentHostView: React.FC<TournamentHostViewProps> = ({ tournament, onT
             stage: TournamentStage.KNOCKOUT_STAGE,
         };
         onTournamentUpdate(updatedTournament);
-        saveTournament(updatedTournament);
     };
 
     const winner = useMemo(() => {
@@ -298,7 +289,7 @@ const TournamentHostView: React.FC<TournamentHostViewProps> = ({ tournament, onT
                 if (tournament.registrationType === 'LOBBY') {
                     return <LobbyRegistration tournament={tournament} onStart={startTournament} />;
                 }
-                return <ManualSetupRegistration tournament={tournament} onUpdate={handleManualUpdateAndSave} onStart={startTournament} />;
+                return <ManualSetupRegistration tournament={tournament} onUpdate={onTournamentUpdate} onStart={startTournament} />;
 
             case TournamentStage.GROUP_STAGE:
                 return (

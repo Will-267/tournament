@@ -7,19 +7,21 @@ const AuthPage: React.FC = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [message, setMessage] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
         setMessage('');
+        setIsLoading(true);
 
         if (isLogin) {
-            const result = login(username, password);
+            const result = await login(username, password);
             if (!result.success) {
                 setError(result.message);
             }
         } else {
-            const result = signUp(username, password);
+            const result = await signUp(username, password);
             if (result.success) {
                 setMessage(result.message);
                 setIsLogin(true);
@@ -29,6 +31,7 @@ const AuthPage: React.FC = () => {
                 setError(result.message);
             }
         }
+        setIsLoading(false);
     };
 
     return (
@@ -51,6 +54,7 @@ const AuthPage: React.FC = () => {
                                 onChange={(e) => setUsername(e.target.value)}
                                 className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
                                 required
+                                disabled={isLoading}
                             />
                         </div>
                         <div>
@@ -62,12 +66,13 @@ const AuthPage: React.FC = () => {
                                 onChange={(e) => setPassword(e.target.value)}
                                 className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
                                 required
+                                disabled={isLoading}
                             />
                         </div>
                         {error && <p className="text-red-400 text-sm text-center">{error}</p>}
                         {message && <p className="text-green-400 text-sm text-center">{message}</p>}
-                        <button type="submit" className="w-full bg-cyan-600 hover:bg-cyan-500 rounded-lg py-2 font-bold transition-colors">
-                            {isLogin ? 'Login' : 'Create Account'}
+                        <button type="submit" className="w-full bg-cyan-600 hover:bg-cyan-500 rounded-lg py-2 font-bold transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed" disabled={isLoading}>
+                            {isLoading ? 'Processing...' : (isLogin ? 'Login' : 'Create Account')}
                         </button>
                     </form>
                     <p className="text-center text-sm mt-6">

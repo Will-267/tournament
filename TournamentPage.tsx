@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { getTournamentById } from './utils/storage';
+import React, { useState, useEffect, useCallback } from 'react';
+import { getTournamentById, saveTournament } from './utils/storage';
 import { Tournament } from './types';
 import { User } from './utils/auth';
 import TournamentHostView from './TournamentAdmin';
 import TournamentPublicView from './TournamentViewer';
+import { websocketClient } from './websocket';
 
 interface TournamentPageProps {
     tournamentId: string;
@@ -12,40 +13,45 @@ interface TournamentPageProps {
 
 const TournamentPage: React.FC<TournamentPageProps> = ({ tournamentId, currentUser }) => {
     const [tournament, setTournament] = useState<Tournament | null>(null);
-    const [lastUpdated, setLastUpdated] = useState(Date.now());
+    const [isLoading, setIsLoading] = useState(true);
 
+    const loadTournament = useCallback(async () => {
+        const loadedTournament = await getTournamentById(tournamentId);
+        setTournament(loadedTournament);
+        setIsLoading(false);
+    }, [tournamentId]);
 
     useEffect(() => {
-        const loadState = () => {
-            const loadedState = getTournamentById(tournamentId);
-            setTournament(loadedState);
-        };
-
-        loadState();
-
-        const handleStorageChange = (event: StorageEvent) => {
-            if (event.key === 'tournaments') {
-                loadState();
-                setLastUpdated(Date.now());
-            }
-        };
-
-        window.addEventListener('storage', handleStorageChange);
+        loadTournament();
         
-        const intervalId = setInterval(loadState, 2000);
+        websocketClient.connect();
+
+        const unsubscribe = websocketClient.subscribe('tournament-update', (data) => {
+            if (data.tournamentId === tournamentId) {
+                console.log('Received update for this tournament, reloading...');
+                loadTournament();
+            }
+        });
 
         return () => {
-            window.removeEventListener('storage', handleStorageChange);
-            clearInterval(intervalId);
+            unsubscribe();
+            // Disconnect if this is the last page using it, or manage centrally.
+            // For simplicity, we can disconnect on leave.
+            websocketClient.disconnect();
         };
-    }, [tournamentId]);
+    }, [tournamentId, loadTournament]);
     
-    const handleTournamentUpdate = (updatedTournament: Tournament) => {
-        setTournament(updatedTournament);
+    const handleTournamentUpdate = async (updatedTournament: Tournament) => {
+        setTournament(updatedTournament); // Optimistic update
+        await saveTournament(updatedTournament); // API call
     }
 
-    if (!tournament) {
+    if (isLoading) {
         return <div className="text-center p-8">Loading tournament...</div>;
+    }
+    
+    if (!tournament) {
+        return <div className="text-center p-8">Tournament not found.</div>;
     }
 
     const isHost = currentUser.username === tournament.createdBy;
@@ -62,7 +68,7 @@ const TournamentPage: React.FC<TournamentPageProps> = ({ tournamentId, currentUs
                         <a href="#/" className="text-cyan-400 hover:underline ml-2">Back to Dashboard</a>
                     </p>
                 </header>
-                <main key={lastUpdated} className="animate-[fadeIn_0.5s_ease-in-out]">
+                <main className="animate-[fadeIn_0.5s_ease-in-out]">
                     <style>{`@keyframes fadeIn { 0% { opacity: 0.5; } 100% { opacity: 1; } }`}</style>
                     {isHost ? (
                         <TournamentHostView tournament={tournament} onTournamentUpdate={handleTournamentUpdate} />

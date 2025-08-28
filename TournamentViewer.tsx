@@ -4,12 +4,11 @@ import { calculateAllStandings } from './utils/tournament';
 import GroupStageView from './components/GroupStageView';
 import KnockoutBracket from './components/KnockoutBracket';
 import { TrophyIcon, UsersIcon } from './components/IconComponents';
-import { saveTournament } from './utils/storage';
 
 interface TournamentPublicViewProps {
     tournament: Tournament;
     currentUser: User | null;
-    onTournamentUpdate: (updatedTournament: Tournament) => void;
+    onTournamentUpdate: (updatedTournament: Tournament) => Promise<void>;
 }
 
 const LobbyRegistrationView: React.FC<{ tournament: Tournament, currentUser: User | null, onJoin: () => void, isUserInTournament: boolean }> = 
@@ -115,7 +114,6 @@ const TournamentPublicView: React.FC<TournamentPublicViewProps> = ({ tournament,
         };
         
         onTournamentUpdate(updatedTournament);
-        saveTournament(updatedTournament);
     };
 
     const isUserInTournament = currentUser ? tournament.players.some(p => p.name === currentUser.username) : false;
