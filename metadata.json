@@ -1,0 +1,5 @@
+{
+  "name": "PES Tournament Hub",
+  "description": "A web application for hosting and viewing PES football tournaments. Features user sign-up/login, a central tournament dashboard, and role-based views for hosts and viewers.",
+  "requestFramePermissions": []
+}
