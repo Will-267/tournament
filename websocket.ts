@@ -1,10 +1,7 @@
 
 const getWebSocketURL = () => {
-    // Construct a relative WebSocket URL based on the current page's location.
-    // This allows it to work correctly behind a reverse proxy.
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host; // e.g., "localhost:5173" or "my-app.com"
-    return `${protocol}//${host}`;
+    // The backend server runs on localhost:3001, so we connect directly.
+    return 'ws://localhost:3001';
 };
 
 const WS_URL = getWebSocketURL();
