@@ -14,14 +14,24 @@ async function request<T>(endpoint: string, options: RequestInit = {}): Promise<
     const response = await fetch(url, config);
 
     if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        try {
+            // Try to get a structured error message from a JSON response
+            const errorData = JSON.parse(errorText);
+            throw new Error(errorData.message || errorText);
+        } catch (e) {
+            // If the response is not JSON, or JSON parsing fails, use the raw text.
+            // If the raw text is empty, fall back to a generic status message.
+            throw new Error(errorText || `HTTP error! status: ${response.status}`);
+        }
     }
     
     // Handle cases where response body might be empty (e.g., 204 No Content)
     const contentType = response.headers.get("content-type");
     if (contentType && contentType.indexOf("application/json") !== -1) {
-        return response.json();
+        // Reading as text first avoids errors with empty bodies
+        const text = await response.text();
+        return text ? JSON.parse(text) : undefined as T;
     } else {
         return undefined as T;
     }
