@@ -1,12 +1,16 @@
 
 import React from 'react';
 import { Group, Standing, Match } from '../types';
+import MatchList from './MatchList';
+import FixtureList from './FixtureList';
 
 interface GroupStageViewProps {
     groups: Group[];
     standings: Record<string, Standing[]>;
     matches: Match[];
     onMatchClick: (match: Match) => void;
+    isHostView: boolean;
+    onAddFixture?: (groupId: string) => void;
 }
 
 const StandingsTable: React.FC<{ standings: Standing[] }> = ({ standings }) => (
@@ -42,42 +46,12 @@ const StandingsTable: React.FC<{ standings: Standing[] }> = ({ standings }) => (
     </div>
 );
 
-const FixtureList: React.FC<{ matches: Match[], onMatchClick: (match: Match) => void }> = ({ matches, onMatchClick }) => {
+
+const GroupStageView: React.FC<GroupStageViewProps> = ({ groups, standings, matches, onMatchClick, isHostView, onAddFixture }) => {
+    
     const pendingMatches = matches.filter(m => !m.played);
-    const playedMatches = matches.filter(m => m.played);
+    const completedMatches = matches.filter(m => m.played);
 
-    return (
-        <div>
-            <h4 className="font-semibold text-lg mt-4 mb-2 text-cyan-300">Pending Matches</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {pendingMatches.length > 0 ? pendingMatches.map(match => (
-                    <button key={match.id} onClick={() => onMatchClick(match)} className="text-left w-full bg-gray-700 hover:bg-gray-600 rounded-lg p-2 text-sm transition-colors">
-                        <div className="flex justify-between items-center">
-                            <span>{match.homeTeam.name}</span>
-                            <span className="text-cyan-400 font-bold">vs</span>
-                            <span>{match.awayTeam.name}</span>
-                        </div>
-                    </button>
-                )) : <p className="text-gray-400 text-sm italic col-span-2">All matches played!</p>}
-            </div>
-
-            <h4 className="font-semibold text-lg mt-4 mb-2 text-gray-400">Completed Matches</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                {playedMatches.map(match => (
-                    <div key={match.id} className="bg-gray-800 rounded-lg p-2 text-sm">
-                        <div className="flex justify-between items-center">
-                            <span className={match.homeScore! > match.awayScore! ? 'font-bold' : 'text-gray-400'}>{match.homeTeam.name}</span>
-                            <span className="font-bold bg-gray-700 px-2 rounded">{match.homeScore} - {match.awayScore}</span>
-                            <span className={match.awayScore! > match.homeScore! ? 'font-bold' : 'text-gray-400'}>{match.awayTeam.name}</span>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-}
-
-const GroupStageView: React.FC<GroupStageViewProps> = ({ groups, standings, matches, onMatchClick }) => {
     return (
         <div>
             <h2 className="text-4xl font-bold text-center mb-8 text-cyan-400">Group Stage</h2>
@@ -86,7 +60,23 @@ const GroupStageView: React.FC<GroupStageViewProps> = ({ groups, standings, matc
                     <div key={group.id} className="bg-gray-800 border border-gray-700 rounded-lg p-4 flex flex-col">
                         <h3 className="text-2xl font-bold mb-4 text-center">{group.name}</h3>
                         <StandingsTable standings={standings[group.id] || []} />
-                        <FixtureList matches={matches.filter(m => m.group === group.id)} onMatchClick={onMatchClick} />
+                         {isHostView && onAddFixture && (
+                            <div className="mt-4">
+                                <button onClick={() => onAddFixture(group.id)} className="w-full bg-cyan-600 hover:bg-cyan-500 rounded-lg px-4 py-2 font-semibold transition-colors">
+                                    Add Fixture
+                                </button>
+                            </div>
+                        )}
+                        <FixtureList 
+                            matches={pendingMatches.filter(m => m.group === group.id)}
+                            onMatchClick={onMatchClick}
+                            isHostView={isHostView}
+                        />
+                        <MatchList 
+                            matches={completedMatches.filter(m => m.group === group.id)} 
+                            onMatchClick={onMatchClick}
+                            isHostView={isHostView} 
+                        />
                     </div>
                 ))}
             </div>

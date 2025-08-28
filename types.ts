@@ -15,7 +15,7 @@ export interface User {
 export interface Player {
     id: string;
     name: string;
-    teamName?: string;
+    teamName: string;
 }
 
 export interface Match {
@@ -38,6 +38,7 @@ export interface Group {
 export interface Standing {
     playerId: string;
     playerName: string;
+    teamName: string;
     played: number;
     wins: number;
     draws: number;

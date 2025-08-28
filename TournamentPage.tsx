@@ -1,10 +1,13 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { getTournamentById, updateTournament } from './utils/storage';
-import { Tournament } from './types';
+import { Tournament, TournamentStage } from './types';
 import { User } from './utils/auth';
 import TournamentHostView from './TournamentAdmin';
 import TournamentPublicView from './TournamentViewer';
+import ShareLink from './components/ShareLink';
 import { websocketClient } from './websocket';
+import ExportPDF from './components/ExportPDF';
 
 interface TournamentPageProps {
     tournamentId: string;
@@ -63,10 +66,19 @@ const TournamentPage: React.FC<TournamentPageProps> = ({ tournamentId, currentUs
                     <h1 className="text-5xl font-extrabold tracking-tight bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent">
                         {tournament.name}
                     </h1>
-                     <p className="text-gray-400 mt-2">
-                        Hosted by {tournament.createdBy} | 
-                        <a href="#/" className="text-cyan-400 hover:underline ml-2">Back to Dashboard</a>
-                    </p>
+                     <div className="flex items-center justify-center flex-wrap gap-x-4 gap-y-2 mt-2">
+                        <p className="text-gray-400">Hosted by {tournament.createdBy}</p>
+                        <span className="text-gray-600 hidden sm:inline">|</span>
+                        <a href="#/" className="text-cyan-400 hover:underline">Back to Dashboard</a>
+                        <span className="text-gray-600 hidden sm:inline">|</span>
+                        <ShareLink />
+                        {(tournament.stage === TournamentStage.GROUP_STAGE || tournament.stage === TournamentStage.KNOCKOUT_STAGE || tournament.stage === TournamentStage.FINISHED) && (
+                            <>
+                                <span className="text-gray-600 hidden sm:inline">|</span>
+                                <ExportPDF tournament={tournament} />
+                            </>
+                        )}
+                     </div>
                 </header>
                 <main className="animate-[fadeIn_0.5s_ease-in-out]">
                     <style>{`@keyframes fadeIn { 0% { opacity: 0.5; } 100% { opacity: 1; } }`}</style>

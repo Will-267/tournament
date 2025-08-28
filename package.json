@@ -15,7 +15,9 @@
     "cors": "^2.8.5",
     "http": "^0.0.1-security",
     "uuid": "^11.1.0",
-    "ws": "^8.18.3"
+    "ws": "^8.18.3",
+    "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.8.2"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

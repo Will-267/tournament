@@ -1,5 +1,5 @@
 
-import { Player, Group, Match, Standing, KnockoutMatch } from './types';
+import { Player, Group, Match, Standing, KnockoutMatch } from '../types';
 
 // Helper to shuffle an array
 const shuffleArray = <T,>(array: T[]): T[] => {
@@ -11,8 +11,8 @@ const shuffleArray = <T,>(array: T[]): T[] => {
     return newArray;
 };
 
-// For LOBBY mode: Shuffles players into new groups and creates fixtures
-export const generateGroupsAndFixtures = (players: Player[]): { groups: Group[], matches: Match[] } => {
+// For LOBBY mode: Shuffles players into new groups
+export const generateGroups = (players: Player[]): { groups: Group[] } => {
     const shuffledPlayers = shuffleArray(players);
     const numPlayers = players.length;
     // Aim for groups of 4-5 players, but allow for 3 if necessary.
@@ -29,32 +29,7 @@ export const generateGroupsAndFixtures = (players: Player[]): { groups: Group[],
         groups[index % numGroups].players.push(player);
     });
 
-    return { groups, matches: generateFixturesForGroups(groups) };
-};
-
-// For MANUAL mode: Creates fixtures for groups that have already been manually configured
-export const generateFixturesForGroups = (groups: Group[]): Match[] => {
-    let matches: Match[] = [];
-    let matchIdCounter = 1;
-
-    groups.forEach(group => {
-        const players = group.players;
-        for (let i = 0; i < players.length; i++) {
-            for (let j = i + 1; j < players.length; j++) {
-                matches.push({
-                    id: `m${matchIdCounter++}`,
-                    homeTeam: players[i],
-                    awayTeam: players[j],
-                    homeScore: null,
-                    awayScore: null,
-                    played: false,
-                    group: group.id,
-                });
-            }
-        }
-    });
-
-    return shuffleArray(matches);
+    return { groups };
 };
 
 
@@ -65,6 +40,7 @@ export const calculateStandingsForGroup = (group: Group, groupMatches: Match[]):
             {
                 playerId: p.id,
                 playerName: p.name,
+                teamName: p.teamName,
                 played: 0,
                 wins: 0,
                 draws: 0,
@@ -81,9 +57,12 @@ export const calculateStandingsForGroup = (group: Group, groupMatches: Match[]):
 
     groupMatches.forEach(match => {
         if (!match.played || match.homeScore === null || match.awayScore === null) return;
+        
+        const homeStanding = standingsMap.get(match.homeTeam.id);
+        const awayStanding = standingsMap.get(match.awayTeam.id);
 
-        const homeStanding = standingsMap.get(match.homeTeam.id)!;
-        const awayStanding = standingsMap.get(match.awayTeam.id)!;
+        // A player might be in a group but not involved in a manually added match yet
+        if (!homeStanding || !awayStanding) return;
 
         homeStanding.played++;
         awayStanding.played++;
@@ -166,7 +145,7 @@ export const determineKnockoutQualifiers = (standings: Record<string, Standing[]
     
     for (const p of remainingPlayers) {
         if (qualifiers.length < knockoutSize && !qualifiedIds.has(p.playerId)) {
-            qualifiers.push({ id: p.playerId, name: p.playerName });
+            qualifiers.push({ id: p.playerId, name: p.playerName, teamName: p.teamName });
             qualifiedIds.add(p.playerId);
         }
     }
@@ -183,7 +162,7 @@ const getRoundName = (numMatches: number): string => {
 
 export const generateKnockoutBracket = (qualifiers: Player[]): KnockoutMatch => {
     const shuffledQualifiers = shuffleArray(qualifiers);
-    const TBD_PLAYER: Player = { id: 'TBD', name: '...' };
+    const TBD_PLAYER: Player = { id: 'TBD', name: '...', teamName: 'TBD' };
     
     const rounds: Match[][] = [];
     let currentRoundQualifiers = [...shuffledQualifiers];
