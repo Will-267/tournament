@@ -12,6 +12,8 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newTournamentName, setNewTournamentName] = useState('');
     const [registrationType, setRegistrationType] = useState<RegistrationType>('LOBBY');
+    const [isCreating, setIsCreating] = useState(false);
+    const [createError, setCreateError] = useState('');
 
     useEffect(() => {
         const fetchTournaments = async () => {
@@ -24,25 +26,38 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
     const handleCreateTournament = async (e: React.FormEvent) => {
         e.preventDefault();
         const trimmedName = newTournamentName.trim();
-        if (!trimmedName) return;
+        if (!trimmedName || isCreating) return;
 
-        const newTournamentData: Omit<Tournament, 'id'> = {
-            name: trimmedName,
-            createdBy: currentUser.username,
-            stage: TournamentStage.REGISTRATION,
-            registrationType: registrationType,
-            players: [],
-            groups: [],
-            matches: [],
-            knockoutMatches: { rounds: [] },
-        };
-        
-        const createdTournament = await createTournament(newTournamentData);
-        
-        setTournaments(prev => [...prev, createdTournament]);
-        setShowCreateModal(false);
-        setNewTournamentName('');
-        window.location.hash = `#/tournaments/${createdTournament.id}`;
+        setIsCreating(true);
+        setCreateError('');
+
+        try {
+            const newTournamentData: Omit<Tournament, 'id'> = {
+                name: trimmedName,
+                createdBy: currentUser.username,
+                stage: TournamentStage.REGISTRATION,
+                registrationType: registrationType,
+                players: [],
+                groups: [],
+                matches: [],
+                knockoutMatches: { rounds: [] },
+            };
+            
+            const createdTournament = await createTournament(newTournamentData);
+
+            if (createdTournament && createdTournament.id) {
+                setTournaments(prev => [...prev, createdTournament]);
+                setShowCreateModal(false);
+                setNewTournamentName('');
+                window.location.hash = `#/tournaments/${createdTournament.id}`;
+            } else {
+                throw new Error("Server returned an invalid response.");
+            }
+        } catch (error: any) {
+            setCreateError(error.message || "An unknown error occurred.");
+        } finally {
+            setIsCreating(false);
+        }
     };
     
     const getStatusInfo = (t: Tournament): {text: string, color: string} => {
@@ -142,9 +157,14 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
                                     </button>
                                 </div>
                             </div>
+                            
+                            {createError && <p className="text-red-400 text-sm text-center">{createError}</p>}
+                            
                             <div className="flex justify-end gap-3 pt-2">
-                                <button type="button" onClick={() => setShowCreateModal(false)} className="bg-gray-600 hover:bg-gray-500 rounded-lg px-6 py-2 font-semibold">Cancel</button>
-                                <button type="submit" className="bg-cyan-600 hover:bg-cyan-500 rounded-lg px-6 py-2 font-semibold">Create</button>
+                                <button type="button" onClick={() => setShowCreateModal(false)} className="bg-gray-600 hover:bg-gray-500 rounded-lg px-6 py-2 font-semibold transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed" disabled={isCreating}>Cancel</button>
+                                <button type="submit" className="bg-cyan-600 hover:bg-cyan-500 rounded-lg px-6 py-2 font-semibold transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed" disabled={!newTournamentName.trim() || isCreating}>
+                                    {isCreating ? 'Creating...' : 'Create'}
+                                </button>
                             </div>
                         </form>
                     </div>
