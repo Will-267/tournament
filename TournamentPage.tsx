@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { getTournamentById, updateTournament } from './utils/storage';
 import { Tournament, TournamentStage } from './types';
@@ -70,12 +71,16 @@ const TournamentPage: React.FC<TournamentPageProps> = ({ tournamentId, currentUs
                         <p className="text-gray-400">Hosted by {tournament.createdBy}</p>
                         <span className="text-gray-600 hidden sm:inline">|</span>
                         <a href="#/" className="text-cyan-400 hover:underline">Back to Dashboard</a>
-                        <span className="text-gray-600 hidden sm:inline">|</span>
-                        <ShareLink />
-                        {(tournament.stage === TournamentStage.GROUP_STAGE || tournament.stage === TournamentStage.KNOCKOUT_STAGE || tournament.stage === TournamentStage.FINISHED) && (
+                        {isHost && (
                             <>
                                 <span className="text-gray-600 hidden sm:inline">|</span>
-                                <ExportPDF tournament={tournament} />
+                                <ShareLink />
+                                {(tournament.stage === TournamentStage.GROUP_STAGE || tournament.stage === TournamentStage.KNOCKOUT_STAGE || tournament.stage === TournamentStage.FINISHED) && (
+                                    <>
+                                        <span className="text-gray-600 hidden sm:inline">|</span>
+                                        <ExportPDF tournament={tournament} />
+                                    </>
+                                )}
                             </>
                         )}
                      </div>
