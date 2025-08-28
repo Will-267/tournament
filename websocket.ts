@@ -1,7 +1,10 @@
 
+
 const getWebSocketURL = () => {
-    // The backend server runs on localhost:3001, so we connect directly.
-    return 'ws://localhost:3001';
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    // Connect to the same host that serves the page, letting the proxy handle it.
+    // Netlify and other modern hosts will automatically proxy WebSocket connections.
+    return `${protocol}//${window.location.host}`;
 };
 
 const WS_URL = getWebSocketURL();
