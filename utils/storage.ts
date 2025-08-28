@@ -15,16 +15,10 @@ export const getTournamentById = async (id: string): Promise<Tournament | null> 
     }
 };
 
-export const saveTournament = async (tournament: Tournament): Promise<Tournament> => {
-    if (tournaments.some(t => t.id === tournament.id)) {
-        // Existing tournament, use PUT to update
-        return api.put<Tournament>(`/tournaments/${tournament.id}`, tournament);
-    } else {
-        // New tournament, use POST to create
-        return api.post<Tournament>('/tournaments', tournament);
-    }
+export const createTournament = async (tournamentData: Omit<Tournament, 'id'>): Promise<Tournament> => {
+    return api.post<Tournament>('/tournaments', tournamentData);
 };
 
-// Local cache to determine if a tournament is new or existing for save logic
-let tournaments: Tournament[] = [];
-getTournaments().then(data => tournaments = data);
+export const updateTournament = async (tournament: Tournament): Promise<Tournament> => {
+    return api.put<Tournament>(`/tournaments/${tournament.id}`, tournament);
+};

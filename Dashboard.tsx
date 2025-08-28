@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getTournaments, saveTournament } from './utils/storage';
+import { getTournaments, createTournament } from './utils/storage';
 import { User, Tournament, TournamentStage, RegistrationType } from './types';
 import { logout } from './utils/auth';
 
@@ -37,8 +37,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
             knockoutMatches: { rounds: [] },
         };
         
-        // The backend will generate the ID
-        const createdTournament = await saveTournament(newTournamentData as Tournament);
+        const createdTournament = await createTournament(newTournamentData);
         
         setTournaments(prev => [...prev, createdTournament]);
         setShowCreateModal(false);

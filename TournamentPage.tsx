@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { getTournamentById, saveTournament } from './utils/storage';
+import { getTournamentById, updateTournament } from './utils/storage';
 import { Tournament } from './types';
 import { User } from './utils/auth';
 import TournamentHostView from './TournamentAdmin';
@@ -43,7 +43,7 @@ const TournamentPage: React.FC<TournamentPageProps> = ({ tournamentId, currentUs
     
     const handleTournamentUpdate = async (updatedTournament: Tournament) => {
         setTournament(updatedTournament); // Optimistic update
-        await saveTournament(updatedTournament); // API call
+        await updateTournament(updatedTournament); // API call
     }
 
     if (isLoading) {
