@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { login } from './utils/auth';
+import { login, signUp } from './utils/auth';
 
 const AuthPage: React.FC = () => {
+    const [isLoginView, setIsLoginView] = useState(true);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -12,12 +13,13 @@ const AuthPage: React.FC = () => {
         setError('');
         setIsLoading(true);
 
-        const result = await login(username, password);
+        const action = isLoginView ? login : signUp;
+        const result = await action(username, password);
+        
         if (!result.success) {
             setError(result.message);
         }
-        // On success, the 'auth-change' event will trigger a re-render in App.tsx,
-        // which will then handle redirecting away from the login page.
+        // On success, the 'auth-change' event will trigger a re-render in App.tsx
         setIsLoading(false);
     };
 
@@ -25,12 +27,14 @@ const AuthPage: React.FC = () => {
         <div className="flex items-center justify-center min-h-screen p-4">
             <div className="w-full max-w-md">
                  <header className="text-center mb-8">
-                    <a href="#/" className="text-5xl font-extrabold tracking-tight bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent hover:opacity-80 transition-opacity">
+                    <h1 className="text-5xl font-extrabold tracking-tight bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent">
                         PES Tournament Hub
-                    </a>
+                    </h1>
                 </header>
                 <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-8 shadow-2xl shadow-cyan-500/10">
-                    <h2 className="text-3xl font-bold text-center mb-6 text-cyan-400">Admin Login</h2>
+                    <h2 className="text-3xl font-bold text-center mb-6 text-cyan-400">
+                        {isLoginView ? 'Login' : 'Sign Up'}
+                    </h2>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
                             <label className="block mb-1 font-semibold" htmlFor="username">Username</label>
@@ -58,9 +62,17 @@ const AuthPage: React.FC = () => {
                         </div>
                         {error && <p className="text-red-400 text-sm text-center">{error}</p>}
                         <button type="submit" className="w-full bg-cyan-600 hover:bg-cyan-500 rounded-lg py-2 font-bold transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed" disabled={isLoading}>
-                            {isLoading ? 'Processing...' : 'Login'}
+                            {isLoading ? 'Processing...' : (isLoginView ? 'Login' : 'Create Account')}
                         </button>
                     </form>
+                     <div className="text-center mt-4">
+                        <button 
+                            onClick={() => { setIsLoginView(!isLoginView); setError(''); }} 
+                            className="text-sm text-cyan-400 hover:underline"
+                        >
+                            {isLoginView ? "Don't have an account? Sign Up" : "Already have an account? Login"}
+                        </button>
+                    </div>
                 </div>
             </div>
         </div>

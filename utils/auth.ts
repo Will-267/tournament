@@ -12,6 +12,20 @@ interface AuthResponse {
 
 const SESSION_KEY = 'currentUser';
 
+export const signUp = async (username: string, password_raw: string): Promise<{ success: boolean, user: User | null, message: string }> => {
+    try {
+        const response = await api.post<AuthResponse>('/auth/signup', { username, password: password_raw });
+        if (response.user) {
+            sessionStorage.setItem(SESSION_KEY, JSON.stringify(response.user));
+            window.dispatchEvent(new CustomEvent('auth-change'));
+            return { success: true, user: response.user, message: response.message };
+        }
+        return { success: false, user: null, message: 'Signup failed.' };
+    } catch (error: any) {
+        return { success: false, user: null, message: error.message };
+    }
+};
+
 export const login = async (username: string, password_raw: string): Promise<{ success: boolean, user: User | null, message: string }> => {
     try {
         const response = await api.post<AuthResponse>('/auth/login', { username, password: password_raw });

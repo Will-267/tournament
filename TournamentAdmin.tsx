@@ -5,13 +5,68 @@ import {
     determineKnockoutQualifiers, 
     generateKnockoutBracket
 } from './utils/tournament';
-import { TrophyIcon, ArrowRightIcon, UsersIcon, CloseIcon } from './components/IconComponents';
+import { TrophyIcon, ArrowRightIcon, UsersIcon, CloseIcon, LinkIcon } from './components/IconComponents';
 import GroupStageView from './components/GroupStageView';
 import KnockoutBracket from './components/KnockoutBracket';
 import ScoreModal from './components/ScoreModal';
 import AddFixtureModal from './components/AddFixtureModal';
 
 const MIN_PLAYERS = 4;
+
+const LobbyRegistration: React.FC<{ tournament: Tournament, onStart: () => void }> = ({ tournament, onStart }) => {
+    const [copied, setCopied] = useState(false);
+    const url = window.location.href;
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(url).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        });
+    };
+
+    const canStart = tournament.players.length >= MIN_PLAYERS;
+    
+    return (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+             <div>
+                <h3 className="text-2xl font-bold mb-4 text-cyan-400">Public Lobby</h3>
+                <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
+                    <p className="text-gray-300 mb-4">Players can join this tournament using the public link. Once registration is closed, you can proceed to generate groups.</p>
+                    <button
+                        onClick={handleCopy}
+                        className="w-full flex items-center justify-center gap-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg px-4 py-2 font-semibold transition-colors"
+                    >
+                        <LinkIcon />
+                        {copied ? 'Link Copied!' : 'Copy Join Link'}
+                    </button>
+                </div>
+            </div>
+            <div>
+                <h3 className="text-2xl font-bold mb-4 text-cyan-400">Registered Players ({tournament.players.length})</h3>
+                <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 min-h-[200px]">
+                    {tournament.players.length > 0 ? (
+                        <ul className="space-y-2">
+                            {tournament.players.map(p => (
+                                <li key={p.id} className="bg-gray-700 rounded p-2 text-sm">
+                                    {p.name} <span className="text-cyan-300 text-xs">({p.teamName})</span>
+                                </li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p className="text-gray-500 italic">No players have registered yet.</p>
+                    )}
+                </div>
+            </div>
+            <div className="lg:col-span-2 text-center mt-4">
+                <button onClick={onStart} disabled={!canStart} className="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform hover:scale-105 w-full max-w-md flex items-center justify-center gap-2 disabled:bg-gray-500 disabled:cursor-not-allowed disabled:scale-100">
+                    Generate Groups & Start Tournament <ArrowRightIcon />
+                </button>
+                 {!canStart && <p className="text-xs text-gray-400 mt-2">Requires a minimum of {MIN_PLAYERS} players to start.</p>}
+            </div>
+        </div>
+    );
+};
+
 
 const ManualSetupRegistration: React.FC<{ tournament: Tournament, onUpdate: (t: Tournament) => void, onStart: () => void }> = ({ tournament, onUpdate, onStart }) => {
     const [newPlayerName, setNewPlayerName] = useState('');
@@ -172,7 +227,6 @@ const ManualSetupRegistration: React.FC<{ tournament: Tournament, onUpdate: (t: 
     );
 };
 
-// Fix: Defined TournamentHostViewProps interface for the component.
 interface TournamentHostViewProps {
     tournament: Tournament;
     onTournamentUpdate: (updatedTournament: Tournament) => void;
@@ -192,6 +246,21 @@ const TournamentHostView: React.FC<TournamentHostViewProps> = ({ tournament, onT
     const handleStartManualTournament = () => {
          onTournamentUpdate({ 
             ...tournament, 
+            stage: TournamentStage.GROUP_STAGE,
+        });
+    };
+    
+    const handleStartLobbyTournament = () => {
+         // This is a placeholder for a more complex group generation logic
+        const playersPerGroup = Math.ceil(tournament.players.length / 2);
+        const shuffledPlayers = [...tournament.players].sort(() => 0.5 - Math.random());
+        const groupA: Group = { id: 'g1', name: 'Group A', players: shuffledPlayers.slice(0, playersPerGroup) };
+        const groupB: Group = { id: 'g2', name: 'Group B', players: shuffledPlayers.slice(playersPerGroup) };
+        const groups = [groupA, groupB].filter(g => g.players.length > 0);
+        
+        onTournamentUpdate({ 
+            ...tournament, 
+            groups,
             stage: TournamentStage.GROUP_STAGE,
         });
     };
@@ -300,6 +369,9 @@ const TournamentHostView: React.FC<TournamentHostViewProps> = ({ tournament, onT
     const renderContent = () => {
         switch (tournament.stage) {
             case TournamentStage.REGISTRATION:
+                if (tournament.registrationType === 'LOBBY') {
+                    return <LobbyRegistration tournament={tournament} onStart={handleStartLobbyTournament} />;
+                }
                 return <ManualSetupRegistration tournament={tournament} onUpdate={onTournamentUpdate} onStart={handleStartManualTournament} />;
 
             case TournamentStage.GROUP_STAGE:

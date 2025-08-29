@@ -10,7 +10,7 @@ import ExportPDF from './components/ExportPDF';
 
 interface TournamentPageProps {
     tournamentId: string;
-    currentUser: User | null;
+    currentUser: User;
 }
 
 const TournamentPage: React.FC<TournamentPageProps> = ({ tournamentId, currentUser }) => {
@@ -56,7 +56,7 @@ const TournamentPage: React.FC<TournamentPageProps> = ({ tournamentId, currentUs
         return <div className="text-center p-8">Tournament not found.</div>;
     }
 
-    const isHost = currentUser ? currentUser.username === tournament.createdBy : false;
+    const isHost = currentUser.username === tournament.createdBy;
 
     return (
         <div className="p-4 sm:p-8">
@@ -69,16 +69,12 @@ const TournamentPage: React.FC<TournamentPageProps> = ({ tournamentId, currentUs
                         <p className="text-gray-400">Hosted by {tournament.createdBy}</p>
                         <span className="text-gray-600 hidden sm:inline">|</span>
                         <a href="#/" className="text-cyan-400 hover:underline">Back to Dashboard</a>
-                        {isHost && (
+                        <span className="text-gray-600 hidden sm:inline">|</span>
+                        <ShareLink />
+                        {(tournament.stage === TournamentStage.GROUP_STAGE || tournament.stage === TournamentStage.KNOCKOUT_STAGE || tournament.stage === TournamentStage.FINISHED) && (
                             <>
                                 <span className="text-gray-600 hidden sm:inline">|</span>
-                                <ShareLink />
-                                {(tournament.stage === TournamentStage.GROUP_STAGE || tournament.stage === TournamentStage.KNOCKOUT_STAGE || tournament.stage === TournamentStage.FINISHED) && (
-                                    <>
-                                        <span className="text-gray-600 hidden sm:inline">|</span>
-                                        <ExportPDF tournament={tournament} />
-                                    </>
-                                )}
+                                <ExportPDF tournament={tournament} />
                             </>
                         )}
                      </div>
@@ -88,7 +84,7 @@ const TournamentPage: React.FC<TournamentPageProps> = ({ tournamentId, currentUs
                     {isHost ? (
                         <TournamentHostView tournament={tournament} onTournamentUpdate={handleTournamentUpdate} />
                     ) : (
-                        <TournamentPublicView tournament={tournament} />
+                        <TournamentPublicView tournament={tournament} currentUser={currentUser} onTournamentUpdate={handleTournamentUpdate} />
                     )}
                 </main>
             </div>
