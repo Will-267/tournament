@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Tournament, TournamentStage, Player, User } from './types';
+import { Tournament, TournamentStage } from './types';
 import { calculateAllStandings } from './utils/tournament';
 import GroupStageView from './components/GroupStageView';
 import KnockoutBracket from './components/KnockoutBracket';
@@ -7,27 +7,7 @@ import { TrophyIcon, UsersIcon } from './components/IconComponents';
 
 interface TournamentPublicViewProps {
     tournament: Tournament;
-    currentUser: User | null;
-    onTournamentUpdate: (updatedTournament: Tournament) => Promise<void>;
 }
-
-const RegistrationView: React.FC<{ tournament: Tournament }> = ({ tournament }) => (
-     <div className="text-center max-w-md mx-auto">
-        <h2 className="text-3xl font-bold mb-6 text-cyan-400">Tournament Setup</h2>
-        <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 min-h-[200px]">
-            <h3 className="text-xl font-semibold mb-2 flex items-center justify-center gap-2">
-                <UsersIcon /> Registered Players ({tournament.players.length})
-            </h3>
-            {tournament.players.length > 0 ? (
-                <ul className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-center">
-                    {tournament.players.map(p => <li key={p.id} className="bg-gray-700 rounded p-2 text-sm truncate" title={`${p.name} (${p.teamName})`}>{p.name} <span className="text-cyan-400 text-xs">({p.teamName})</span></li>)}
-                </ul>
-            ) : (
-                <p className="text-gray-500 italic mt-8">The host is setting up the tournament...</p>
-            )}
-        </div>
-    </div>
-);
 
 const ManualSetupView: React.FC<{ tournament: Tournament }> = ({ tournament }) => (
     <div className="max-w-4xl mx-auto">
@@ -67,7 +47,7 @@ const ManualSetupView: React.FC<{ tournament: Tournament }> = ({ tournament }) =
 );
 
 
-const TournamentPublicView: React.FC<TournamentPublicViewProps> = ({ tournament, currentUser, onTournamentUpdate }) => {
+const TournamentPublicView: React.FC<TournamentPublicViewProps> = ({ tournament }) => {
 
     const standings = useMemo(() => {
         if ((tournament.stage === TournamentStage.GROUP_STAGE || tournament.stage === TournamentStage.KNOCKOUT_STAGE) && tournament.groups.length > 0) {

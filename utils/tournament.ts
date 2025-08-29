@@ -11,28 +11,6 @@ const shuffleArray = <T,>(array: T[]): T[] => {
     return newArray;
 };
 
-// For LOBBY mode: Shuffles players into new groups
-export const generateGroups = (players: Player[]): { groups: Group[] } => {
-    const shuffledPlayers = shuffleArray(players);
-    const numPlayers = players.length;
-    // Aim for groups of 4-5 players, but allow for 3 if necessary.
-    const numGroups = Math.max(1, Math.round(numPlayers / 4));
-    
-    const groups: Group[] = Array.from({ length: numGroups }, (_, i) => ({
-        id: `g${i + 1}`,
-        name: `Group ${String.fromCharCode(65 + i)}`,
-        players: [],
-    }));
-
-    // Distribute players into groups as evenly as possible
-    shuffledPlayers.forEach((player, index) => {
-        groups[index % numGroups].players.push(player);
-    });
-
-    return { groups };
-};
-
-
 export const calculateStandingsForGroup = (group: Group, groupMatches: Match[]): Standing[] => {
     const standingsMap: Map<string, Standing> = new Map(
         group.players.map(p => [

@@ -88,7 +88,7 @@ const TournamentPage: React.FC<TournamentPageProps> = ({ tournamentId, currentUs
                     {isHost ? (
                         <TournamentHostView tournament={tournament} onTournamentUpdate={handleTournamentUpdate} />
                     ) : (
-                        <TournamentPublicView tournament={tournament} currentUser={currentUser} onTournamentUpdate={handleTournamentUpdate} />
+                        <TournamentPublicView tournament={tournament} />
                     )}
                 </main>
             </div>

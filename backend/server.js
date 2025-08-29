@@ -1,6 +1,9 @@
+
 import express from 'express';
 import cors from 'cors';
 import http from 'http';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import authRoutes from './routes/auth.routes.js';
 import tournamentRoutes from './routes/tournaments.routes.js';
 import { initWebSocketServer } from './services/websocket.service.js';
@@ -18,6 +21,12 @@ process.on('uncaughtException', (err, origin) => {
 const app = express();
 const port = 3001;
 
+// --- ES Module boilerplate for __dirname ---
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const rootPath = path.join(__dirname, '..');
+
+
 // --- Middleware ---
 app.use(cors());
 app.use(express.json());
@@ -29,8 +38,19 @@ app.use((req, res, next) => {
 });
 
 // --- API Routers ---
-app.use('/api/auth', authRoutes);
-app.use('/api/tournaments', tournamentRoutes);
+app.use('/auth', authRoutes);
+app.use('/tournaments', tournamentRoutes);
+
+
+// --- Serve Frontend Static Files ---
+app.use(express.static(rootPath));
+
+// --- SPA Fallback ---
+// For any GET request that doesn't match an API route or a static file,
+// send the index.html file. This is crucial for single-page applications.
+app.get('*', (req, res) => {
+    res.sendFile(path.join(rootPath, 'index.html'));
+});
 
 
 // --- Server and WebSocket Setup ---
