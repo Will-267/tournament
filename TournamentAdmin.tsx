@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Tournament, Match, TournamentStage, Player, Group } from './types';
 import { 
@@ -14,35 +13,6 @@ import ScoreModal from './components/ScoreModal';
 import AddFixtureModal from './components/AddFixtureModal';
 
 const MIN_PLAYERS = 4;
-
-interface TournamentHostViewProps {
-    tournament: Tournament;
-    onTournamentUpdate: (updatedTournament: Tournament) => Promise<void>;
-}
-
-const LobbyRegistration: React.FC<{ tournament: Tournament, onStart: () => void }> = ({ tournament, onStart }) => (
-    <div className="text-center max-w-md mx-auto">
-        <h2 className="text-3xl font-bold mb-6 text-cyan-400">Tournament Lobby</h2>
-        <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 min-h-[200px]">
-            <h3 className="text-xl font-semibold mb-2 flex items-center justify-center gap-2">
-                <UsersIcon /> Registered Players ({tournament.players.length})
-            </h3>
-            {tournament.players.length > 0 ? (
-                <ul className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-center">
-                    {tournament.players.map(p => <li key={p.id} className="bg-gray-700 rounded p-2 text-sm truncate" title={`${p.name} (${p.teamName})`}>{p.name}</li>)}
-                </ul>
-            ) : (
-                <p className="text-gray-500 italic mt-8">Waiting for players to join...</p>
-            )}
-        </div>
-        <p className="text-gray-400 text-sm mt-4">Other logged-in users can now join this tournament from the dashboard.</p>
-        {tournament.players.length >= MIN_PLAYERS && (
-            <button onClick={onStart} className="mt-6 bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform hover:scale-105 w-full flex items-center justify-center gap-2">
-                Start Tournament <ArrowRightIcon />
-            </button>
-        )}
-    </div>
-);
 
 const ManualSetupRegistration: React.FC<{ tournament: Tournament, onUpdate: (t: Tournament) => void, onStart: () => void }> = ({ tournament, onUpdate, onStart }) => {
     const [newPlayerName, setNewPlayerName] = useState('');
@@ -203,6 +173,11 @@ const ManualSetupRegistration: React.FC<{ tournament: Tournament, onUpdate: (t: 
     );
 };
 
+// Fix: Defined TournamentHostViewProps interface for the component.
+interface TournamentHostViewProps {
+    tournament: Tournament;
+    onTournamentUpdate: (updatedTournament: Tournament) => void;
+}
 
 const TournamentHostView: React.FC<TournamentHostViewProps> = ({ tournament, onTournamentUpdate }) => {
     const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
@@ -214,15 +189,6 @@ const TournamentHostView: React.FC<TournamentHostViewProps> = ({ tournament, onT
         }
         return {};
     }, [tournament]);
-
-    const handleStartTournament = () => {
-        const { groups } = generateGroups(tournament.players);
-        onTournamentUpdate({ 
-            ...tournament, 
-            stage: TournamentStage.GROUP_STAGE,
-            groups: groups,
-        });
-    };
     
     const handleStartManualTournament = () => {
          onTournamentUpdate({ 
@@ -335,9 +301,6 @@ const TournamentHostView: React.FC<TournamentHostViewProps> = ({ tournament, onT
     const renderContent = () => {
         switch (tournament.stage) {
             case TournamentStage.REGISTRATION:
-                if (tournament.registrationType === 'LOBBY') {
-                    return <LobbyRegistration tournament={tournament} onStart={handleStartTournament} />;
-                }
                 return <ManualSetupRegistration tournament={tournament} onUpdate={onTournamentUpdate} onStart={handleStartManualTournament} />;
 
             case TournamentStage.GROUP_STAGE:

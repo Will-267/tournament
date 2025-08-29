@@ -4,14 +4,13 @@ import { User, Tournament, TournamentStage, RegistrationType } from './types';
 import { logout } from './utils/auth';
 
 interface DashboardProps {
-    currentUser: User;
+    currentUser: User | null;
 }
 
 const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
     const [tournaments, setTournaments] = useState<Tournament[]>([]);
     const [showCreateModal, setShowCreateModal] = useState(false);
     const [newTournamentName, setNewTournamentName] = useState('');
-    const [registrationType, setRegistrationType] = useState<RegistrationType>('LOBBY');
     const [isCreating, setIsCreating] = useState(false);
     const [createError, setCreateError] = useState('');
 
@@ -26,7 +25,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
     const handleCreateTournament = async (e: React.FormEvent) => {
         e.preventDefault();
         const trimmedName = newTournamentName.trim();
-        if (!trimmedName || isCreating) return;
+        if (!trimmedName || isCreating || !currentUser) return;
 
         setIsCreating(true);
         setCreateError('');
@@ -36,7 +35,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
                 name: trimmedName,
                 createdBy: currentUser.username,
                 stage: TournamentStage.REGISTRATION,
-                registrationType: registrationType,
+                registrationType: 'MANUAL',
                 players: [],
                 groups: [],
                 matches: [],
@@ -63,7 +62,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
     const getStatusInfo = (t: Tournament): {text: string, color: string} => {
         switch(t.stage) {
             case TournamentStage.REGISTRATION:
-                return { text: t.registrationType === 'LOBBY' ? 'Recruiting' : 'Setup', color: 'bg-yellow-500' };
+                return { text: 'Setup', color: 'bg-yellow-500' };
             case TournamentStage.GROUP_STAGE:
                 return { text: 'Group Stage', color: 'bg-cyan-500' };
             case TournamentStage.KNOCKOUT_STAGE:
@@ -83,21 +82,29 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
                         <h1 className="text-5xl font-extrabold tracking-tight bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent">
                            Tournament Dashboard
                         </h1>
-                        <p className="text-gray-400">Welcome, {currentUser.username}!</p>
+                        {currentUser && <p className="text-gray-400">Welcome, {currentUser.username}!</p>}
                     </div>
                     <div>
-                        <button onClick={logout} className="text-gray-400 hover:text-white font-semibold mt-4 sm:mt-0">
-                            Logout
-                        </button>
+                        {currentUser ? (
+                            <button onClick={logout} className="text-gray-400 hover:text-white font-semibold mt-4 sm:mt-0">
+                                Logout
+                            </button>
+                        ) : (
+                            <a href="#/login" className="bg-cyan-600 hover:bg-cyan-500 font-bold py-2 px-4 rounded-lg mt-4 sm:mt-0 inline-block">
+                                Admin Login
+                            </a>
+                        )}
                     </div>
                 </header>
 
                 <main>
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-3xl font-bold">Tournaments</h2>
-                        <button onClick={() => setShowCreateModal(true)} className="bg-cyan-600 hover:bg-cyan-500 font-bold py-2 px-4 rounded-lg">
-                            Create Tournament
-                        </button>
+                        {currentUser && (
+                            <button onClick={() => setShowCreateModal(true)} className="bg-cyan-600 hover:bg-cyan-500 font-bold py-2 px-4 rounded-lg">
+                                Create Tournament
+                            </button>
+                        )}
                     </div>
                     <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-4 sm:p-6 shadow-2xl shadow-cyan-500/10">
                         {tournaments.length > 0 ? (
@@ -120,7 +127,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
                                 )})}
                             </div>
                         ) : (
-                            <p className="text-center text-gray-400 py-8">No tournaments found. Why not create one?</p>
+                            <p className="text-center text-gray-400 py-8">No tournaments found. {currentUser ? "Why not create one?" : ""}</p>
                         )}
                     </div>
                 </main>
@@ -144,19 +151,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
                                     autoFocus
                                 />
                             </div>
-                            <div>
-                                <label className="block mb-2 font-semibold">Registration Method</label>
-                                <div className="flex gap-2">
-                                    <button type="button" onClick={() => setRegistrationType('LOBBY')} className={`flex-1 p-3 rounded-lg border-2 text-sm font-semibold transition-colors ${registrationType === 'LOBBY' ? 'bg-cyan-600 border-cyan-500' : 'bg-gray-700 border-gray-600 hover:border-gray-500'}`}>
-                                        <h3 className="font-bold">Public Lobby</h3>
-                                        <p className="font-normal text-xs text-gray-300">Players log in and join themselves.</p>
-                                    </button>
-                                     <button type="button" onClick={() => setRegistrationType('MANUAL')} className={`flex-1 p-3 rounded-lg border-2 text-sm font-semibold transition-colors ${registrationType === 'MANUAL' ? 'bg-cyan-600 border-cyan-500' : 'bg-gray-700 border-gray-600 hover:border-gray-500'}`}>
-                                        <h3 className="font-bold">Manual Setup</h3>
-                                        <p className="font-normal text-xs text-gray-300">Host manually enters players and groups.</p>
-                                    </button>
-                                </div>
-                            </div>
+                            <p className="text-sm text-gray-400 pt-2">All tournaments use manual setup where the host adds players and creates groups. Public registration is disabled.</p>
                             
                             {createError && <p className="text-red-400 text-sm text-center">{createError}</p>}
                             

@@ -1,11 +1,9 @@
-
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Tournament, TournamentStage, Player, User } from './types';
 import { calculateAllStandings } from './utils/tournament';
 import GroupStageView from './components/GroupStageView';
 import KnockoutBracket from './components/KnockoutBracket';
 import { TrophyIcon, UsersIcon } from './components/IconComponents';
-import JoinTournamentModal from './components/JoinTournamentModal';
 
 interface TournamentPublicViewProps {
     tournament: Tournament;
@@ -13,10 +11,9 @@ interface TournamentPublicViewProps {
     onTournamentUpdate: (updatedTournament: Tournament) => Promise<void>;
 }
 
-const LobbyRegistrationView: React.FC<{ tournament: Tournament, currentUser: User | null, onJoin: () => void, isUserInTournament: boolean }> = 
-({ tournament, currentUser, onJoin, isUserInTournament }) => (
+const RegistrationView: React.FC<{ tournament: Tournament }> = ({ tournament }) => (
      <div className="text-center max-w-md mx-auto">
-        <h2 className="text-3xl font-bold mb-6 text-cyan-400">Tournament Lobby</h2>
+        <h2 className="text-3xl font-bold mb-6 text-cyan-400">Tournament Setup</h2>
         <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 min-h-[200px]">
             <h3 className="text-xl font-semibold mb-2 flex items-center justify-center gap-2">
                 <UsersIcon /> Registered Players ({tournament.players.length})
@@ -26,20 +23,9 @@ const LobbyRegistrationView: React.FC<{ tournament: Tournament, currentUser: Use
                     {tournament.players.map(p => <li key={p.id} className="bg-gray-700 rounded p-2 text-sm truncate" title={`${p.name} (${p.teamName})`}>{p.name} <span className="text-cyan-400 text-xs">({p.teamName})</span></li>)}
                 </ul>
             ) : (
-                <p className="text-gray-500 italic mt-8">Waiting for players to join...</p>
+                <p className="text-gray-500 italic mt-8">The host is setting up the tournament...</p>
             )}
         </div>
-        {currentUser && (
-            <div className="mt-6">
-                {isUserInTournament ? (
-                    <p className="text-green-400 font-semibold">You have joined this tournament!</p>
-                ) : (
-                     <button onClick={onJoin} className="bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform hover:scale-105">
-                        Join Tournament
-                    </button>
-                )}
-            </div>
-        )}
     </div>
 );
 
@@ -82,7 +68,6 @@ const ManualSetupView: React.FC<{ tournament: Tournament }> = ({ tournament }) =
 
 
 const TournamentPublicView: React.FC<TournamentPublicViewProps> = ({ tournament, currentUser, onTournamentUpdate }) => {
-    const [showJoinModal, setShowJoinModal] = useState(false);
 
     const standings = useMemo(() => {
         if ((tournament.stage === TournamentStage.GROUP_STAGE || tournament.stage === TournamentStage.KNOCKOUT_STAGE) && tournament.groups.length > 0) {
@@ -100,31 +85,6 @@ const TournamentPublicView: React.FC<TournamentPublicViewProps> = ({ tournament,
         }
         return null;
     }, [tournament]);
-    
-    const handleConfirmJoin = (playerName: string, teamName: string) => {
-        if (!currentUser) {
-            alert("You must be logged in to join a tournament.");
-            return;
-        }
-        if (tournament.players.some(p => p.id === currentUser.id)) {
-            return; // Already joined
-        }
-        
-        const newPlayer: Player = { 
-            id: currentUser.id, 
-            name: playerName,
-            teamName: teamName,
-        };
-        const updatedTournament: Tournament = {
-            ...tournament,
-            players: [...tournament.players, newPlayer]
-        };
-        
-        onTournamentUpdate(updatedTournament);
-        setShowJoinModal(false);
-    };
-
-    const isUserInTournament = currentUser ? tournament.players.some(p => p.id === currentUser.id) : false;
 
     const renderContent = () => {
         if (winner) {
@@ -141,9 +101,6 @@ const TournamentPublicView: React.FC<TournamentPublicViewProps> = ({ tournament,
 
         switch (tournament.stage) {
             case TournamentStage.REGISTRATION:
-                if (tournament.registrationType === 'LOBBY') {
-                    return <LobbyRegistrationView tournament={tournament} currentUser={currentUser} onJoin={() => setShowJoinModal(true)} isUserInTournament={isUserInTournament} />
-                }
                 return <ManualSetupView tournament={tournament} />;
             case TournamentStage.GROUP_STAGE:
                 return <GroupStageView 
@@ -164,27 +121,10 @@ const TournamentPublicView: React.FC<TournamentPublicViewProps> = ({ tournament,
                 return <p className="text-center text-gray-400">The tournament has not started yet.</p>;
         }
     };
-    
-    const existingTeams = useMemo(() => 
-        tournament.players.map(p => p.teamName).filter(Boolean) as string[], 
-    [tournament.players]);
-
-    const existingPlayerNames = useMemo(() => 
-        tournament.players.map(p => p.name), 
-    [tournament.players]);
 
     return (
          <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-4 sm:p-8 shadow-2xl shadow-cyan-500/10">
             {renderContent()}
-            {showJoinModal && currentUser && (
-                <JoinTournamentModal 
-                    currentUser={currentUser}
-                    existingTeams={existingTeams}
-                    existingPlayerNames={existingPlayerNames}
-                    onClose={() => setShowJoinModal(false)}
-                    onJoin={handleConfirmJoin}
-                />
-            )}
         </div>
     );
 };

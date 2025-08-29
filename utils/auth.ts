@@ -12,15 +12,6 @@ interface AuthResponse {
 
 const SESSION_KEY = 'currentUser';
 
-export const signUp = async (username: string, password_raw: string): Promise<{ success: boolean, message: string }> => {
-    try {
-        const response = await api.post<{ message: string }>('/auth/signup', { username, password: password_raw });
-        return { success: true, message: response.message };
-    } catch (error: any) {
-        return { success: false, message: error.message };
-    }
-};
-
 export const login = async (username: string, password_raw: string): Promise<{ success: boolean, user: User | null, message: string }> => {
     try {
         const response = await api.post<AuthResponse>('/auth/login', { username, password: password_raw });

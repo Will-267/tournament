@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { getTournamentById, updateTournament } from './utils/storage';
 import { Tournament, TournamentStage } from './types';
@@ -12,7 +10,7 @@ import ExportPDF from './components/ExportPDF';
 
 interface TournamentPageProps {
     tournamentId: string;
-    currentUser: User;
+    currentUser: User | null;
 }
 
 const TournamentPage: React.FC<TournamentPageProps> = ({ tournamentId, currentUser }) => {
@@ -58,7 +56,7 @@ const TournamentPage: React.FC<TournamentPageProps> = ({ tournamentId, currentUs
         return <div className="text-center p-8">Tournament not found.</div>;
     }
 
-    const isHost = currentUser.username === tournament.createdBy;
+    const isHost = currentUser ? currentUser.username === tournament.createdBy : false;
 
     return (
         <div className="p-4 sm:p-8">

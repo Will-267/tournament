@@ -1,36 +1,23 @@
 import React, { useState } from 'react';
-import { signUp, login } from './utils/auth';
+import { login } from './utils/auth';
 
 const AuthPage: React.FC = () => {
-    const [isLogin, setIsLogin] = useState(true);
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const [message, setMessage] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
-        setMessage('');
         setIsLoading(true);
 
-        if (isLogin) {
-            const result = await login(username, password);
-            if (!result.success) {
-                setError(result.message);
-            }
-        } else {
-            const result = await signUp(username, password);
-            if (result.success) {
-                setMessage(result.message);
-                setIsLogin(true);
-                setUsername('');
-                setPassword('');
-            } else {
-                setError(result.message);
-            }
+        const result = await login(username, password);
+        if (!result.success) {
+            setError(result.message);
         }
+        // On success, the 'auth-change' event will trigger a re-render in App.tsx,
+        // which will then handle redirecting away from the login page.
         setIsLoading(false);
     };
 
@@ -38,12 +25,12 @@ const AuthPage: React.FC = () => {
         <div className="flex items-center justify-center min-h-screen p-4">
             <div className="w-full max-w-md">
                  <header className="text-center mb-8">
-                    <h1 className="text-5xl font-extrabold tracking-tight bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent">
+                    <a href="#/" className="text-5xl font-extrabold tracking-tight bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent hover:opacity-80 transition-opacity">
                         PES Tournament Hub
-                    </h1>
+                    </a>
                 </header>
                 <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-8 shadow-2xl shadow-cyan-500/10">
-                    <h2 className="text-3xl font-bold text-center mb-6 text-cyan-400">{isLogin ? 'Login' : 'Sign Up'}</h2>
+                    <h2 className="text-3xl font-bold text-center mb-6 text-cyan-400">Admin Login</h2>
                     <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
                             <label className="block mb-1 font-semibold" htmlFor="username">Username</label>
@@ -70,17 +57,10 @@ const AuthPage: React.FC = () => {
                             />
                         </div>
                         {error && <p className="text-red-400 text-sm text-center">{error}</p>}
-                        {message && <p className="text-green-400 text-sm text-center">{message}</p>}
                         <button type="submit" className="w-full bg-cyan-600 hover:bg-cyan-500 rounded-lg py-2 font-bold transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed" disabled={isLoading}>
-                            {isLoading ? 'Processing...' : (isLogin ? 'Login' : 'Create Account')}
+                            {isLoading ? 'Processing...' : 'Login'}
                         </button>
                     </form>
-                    <p className="text-center text-sm mt-6">
-                        {isLogin ? "Don't have an account?" : "Already have an account?"}
-                        <button onClick={() => { setIsLogin(!isLogin); setError(''); setMessage(''); }} className="font-semibold text-cyan-400 hover:underline ml-2">
-                            {isLogin ? 'Sign Up' : 'Login'}
-                        </button>
-                    </p>
                 </div>
             </div>
         </div>

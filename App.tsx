@@ -27,12 +27,16 @@ const App: React.FC = () => {
     }, []);
 
     const renderContent = () => {
-        if (!currentUser) {
+        const parts = hash.replace(/^#\//, '').split('/');
+        
+        if (parts[0] === 'login') {
+             if (currentUser) {
+                window.location.hash = '/';
+                return <Dashboard currentUser={currentUser} />;
+            }
             return <AuthPage />;
         }
 
-        const parts = hash.replace(/^#\//, '').split('/');
-        
         if (parts[0] === 'tournaments' && parts[1]) {
             return <TournamentPage tournamentId={parts[1]} currentUser={currentUser} />;
         }

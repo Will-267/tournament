@@ -5,7 +5,7 @@ export enum TournamentStage {
     FINISHED = 'FINISHED',
 }
 
-export type RegistrationType = 'LOBBY' | 'MANUAL';
+export type RegistrationType = 'MANUAL';
 
 export interface User {
     id: string;
