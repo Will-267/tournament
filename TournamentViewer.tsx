@@ -38,13 +38,14 @@ const TournamentPublicView: React.FC<TournamentPublicViewProps> = ({ tournament,
     const [isJoining, setIsJoining] = useState(false);
     const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
 
-    const handleJoin = (teamName: string) => {
+    const handleJoin = () => {
         if (!currentUser) return;
         setIsJoining(true);
         const newPlayer: Player = {
             id: currentUser.id,
             name: currentUser.username,
-            teamName: teamName.trim()
+            // Team name isn't relevant for chess, but the data structure requires it.
+            teamName: currentUser.username
         };
         const updatedTournament = {
             ...tournament,
@@ -53,6 +54,19 @@ const TournamentPublicView: React.FC<TournamentPublicViewProps> = ({ tournament,
         onTournamentUpdate(updatedTournament);
         setShowJoinModal(false);
         setIsJoining(false);
+    };
+
+    const handleUpdateChessMatch = (updatedMatch: Match) => {
+        const updatedTournament = {
+            ...tournament,
+            matches: tournament.matches.map(m => m.id === updatedMatch.id ? updatedMatch : m)
+        };
+        onTournamentUpdate(updatedTournament);
+
+        // Close modal if game is over
+        if (updatedMatch.played) {
+            setSelectedMatch(null);
+        }
     };
 
     const isPlayerRegistered = useMemo(() => tournament.players.some(p => p.id === currentUser?.id), [tournament.players, currentUser]);
@@ -136,7 +150,7 @@ const TournamentPublicView: React.FC<TournamentPublicViewProps> = ({ tournament,
                 <ChessGame
                     match={selectedMatch}
                     onClose={() => setSelectedMatch(null)}
-                    onUpdateMatch={() => {}} // Spectators cannot update the match
+                    onUpdateMatch={handleUpdateChessMatch}
                     currentUser={currentUser}
                 />
             )}

@@ -56,7 +56,11 @@ const ChessGame: React.FC<ChessGameProps> = ({ match, onClose, onUpdateMatch, cu
     }, [currentUser, match]);
 
     function onDrop(sourceSquare: string, targetSquare: string) {
+        // Prevent spectators or players from moving when it's not their turn
         if (!isPlayer || game.isGameOver()) return false;
+        if ((game.turn() === 'w' && playerColor !== 'white') || (game.turn() === 'b' && playerColor !== 'black')) {
+            return false;
+        }
 
         const gameCopy = new Chess(game.fen());
         let move = null;
@@ -75,6 +79,7 @@ const ChessGame: React.FC<ChessGameProps> = ({ match, onClose, onUpdateMatch, cu
             return false;
         }
         
+        // This local update is for UI responsiveness. The true state will come from the server.
         setGame(gameCopy);
         
         const updatedMatch = { ...match };
@@ -113,8 +118,10 @@ const ChessGame: React.FC<ChessGameProps> = ({ match, onClose, onUpdateMatch, cu
                     </div>
 
                     <div className="w-full max-w-[400px] mx-auto my-4">
-                        <Chessboard 
-                             position={game.fen()} 
+                        <Chessboard
+                            // FIX: The error "Property 'position' does not exist" suggests this project uses
+                            // an older version of react-chessboard where the prop for the FEN string was `fen`.
+                             fen={game.fen()}
                              onPieceDrop={onDrop}
                              boardOrientation={boardOrientation}
                              arePiecesDraggable={isPlayer && !game.isGameOver()}
