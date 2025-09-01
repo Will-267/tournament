@@ -17,7 +17,15 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 
 // --- Middleware ---
-app.use(cors());
+
+// Secure CORS configuration: Only allow requests from the frontend URL.
+// You must set the FRONTEND_URL environment variable in your Render service settings.
+const corsOptions = {
+  origin: process.env.FRONTEND_URL,
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
+
 app.use(express.json());
 
 // Simple request logger middleware to help with debugging

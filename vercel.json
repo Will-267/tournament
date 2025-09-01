@@ -1,6 +1,0 @@
-{
-  "rewrites": [
-    { "source": "/auth/:path*", "destination": "/backend/server.js" },
-    { "source": "/tournaments/:path*", "destination": "/backend/server.js" }
-  ]
-}

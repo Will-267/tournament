@@ -1,8 +1,24 @@
+import { API_BASE_URL } from './config';
+
 const getWebSocketURL = () => {
-    // The WebSocket server is assumed to be running on the same host as the web server.
-    // This logic constructs the correct WebSocket URL (ws:// or wss://) based on the page's protocol.
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `${protocol}//${window.location.host}`;
+    // Fallback for local development or if the URL hasn't been set in config.ts
+    if (!API_BASE_URL || API_BASE_URL.includes('your-backend-service-url')) {
+        console.warn('API_BASE_URL not set in config.ts, falling back to window.location.host for WebSocket.');
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        return `${protocol}//${window.location.host}`;
+    }
+
+    try {
+        const apiUrl = new URL(API_BASE_URL);
+        // Convert http/https protocol from the API base URL to ws/wss for the WebSocket connection
+        const protocol = apiUrl.protocol === 'https:' ? 'wss:' : 'ws:';
+        return `${protocol}//${apiUrl.host}`;
+    } catch (e) {
+        console.error("Invalid API_BASE_URL in config.ts:", e);
+        // Fallback to the current host if the config URL is malformed
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        return `${protocol}//${window.location.host}`;
+    }
 };
 
 const WS_URL = getWebSocketURL();
