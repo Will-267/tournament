@@ -6,7 +6,6 @@ import TournamentHostView from './TournamentAdmin';
 import TournamentPublicView from './TournamentViewer';
 import ShareLink from './components/ShareLink';
 import { websocketClient } from './websocket';
-import VideoStream from './components/VideoStream';
 import Chat from './components/Chat';
 import NotFoundPage from './NotFoundPage';
 
@@ -107,8 +106,8 @@ const TournamentPage: React.FC<TournamentPageProps> = ({ tournamentId, currentUs
                 </header>
                 <main className="animate-[fadeIn_0.5s_ease-in-out]">
                     <style>{`@keyframes fadeIn { 0% { opacity: 0.5; } 100% { opacity: 1; } }`}</style>
-                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div className="lg:col-span-2">
+                     <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                        <div className="lg:col-span-3">
                              {isHost ? (
                                 <TournamentHostView 
                                     tournament={tournament} 
@@ -128,7 +127,6 @@ const TournamentPage: React.FC<TournamentPageProps> = ({ tournamentId, currentUs
                             )}
                         </div>
                         <div className="lg:col-span-1">
-                            <VideoStream />
                             <Chat 
                                 messages={tournament.chatMessages || []}
                                 currentUser={currentUser}

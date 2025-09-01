@@ -101,6 +101,23 @@ const ChessGame: React.FC<ChessGameProps> = ({ match, onUpdateMatch, currentUser
 
         return true;
     }
+    
+    const handleForfeit = () => {
+        if (!isPlayer || game.isGameOver()) return;
+
+        if (window.confirm("Are you sure you want to forfeit this match? This action cannot be undone.")) {
+            const isHomePlayer = currentUser.id === match.homeTeam.id;
+            
+            const updatedMatch = {
+                ...match,
+                played: true,
+                homeScore: isHomePlayer ? 0 : 1,
+                awayScore: isHomePlayer ? 1 : 0,
+                pgn: (match.pgn || '') + (isHomePlayer ? ' {White forfeits}' : ' {Black forfeits}'),
+            };
+            onUpdateMatch(updatedMatch);
+        }
+    };
 
     const boardOrientation = playerColor || 'white';
 
@@ -123,9 +140,20 @@ const ChessGame: React.FC<ChessGameProps> = ({ match, onUpdateMatch, currentUser
                 />
             </div>
             
-            <div className="text-center font-semibold text-lg my-2 h-6 bg-gray-900/50 rounded-lg flex items-center justify-center">
+            <div className="text-center font-semibold text-lg my-2 h-8 bg-gray-900/50 rounded-lg flex items-center justify-center">
                 <p>{status}</p>
             </div>
+
+            {isPlayer && !game.isGameOver() && (
+                <div className="mt-4 text-center">
+                    <button
+                        onClick={handleForfeit}
+                        className="bg-red-700 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg text-sm transition-colors"
+                    >
+                        Forfeit Match
+                    </button>
+                </div>
+            )}
         </div>
     );
 };
