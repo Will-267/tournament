@@ -37,9 +37,19 @@ if (!allowedOrigin) {
 const corsOptions = {
     origin: (origin, callback) => {
         // The `origin` is the URL of the site making the request, e.g., your Netlify URL.
-        // We allow the request if the origin matches our configured URL,
-        // or if it's not a cross-origin request at all (e.g., from Postman, where `origin` is undefined).
-        if (!origin || origin === allowedOrigin) {
+        console.log(`CORS CHECK: Incoming request origin: ${origin}. Allowed origin: ${allowedOrigin}`);
+        
+        // Helper to normalize URLs by removing any trailing slashes.
+        const normalizeUrl = (url) => {
+            if (!url) return undefined;
+            return url.endsWith('/') ? url.slice(0, -1) : url;
+        };
+        
+        const normalizedOrigin = normalizeUrl(origin);
+        const normalizedAllowedOrigin = normalizeUrl(allowedOrigin);
+        
+        // Allow the request if origins match, or if it's not a cross-origin request (e.g., from Postman).
+        if (!origin || normalizedOrigin === normalizedAllowedOrigin) {
             callback(null, true); // Allow the request
         } else {
             // Log the blocked origin for easier debugging.
