@@ -8,9 +8,10 @@ interface ChatProps {
     isHost: boolean;
     onSendMessage: (messageText: string) => void;
     onDeleteMessage?: (messageId: string) => void;
+    hideTitle?: boolean;
 }
 
-const Chat: React.FC<ChatProps> = ({ messages, currentUser, isHost, onSendMessage, onDeleteMessage }) => {
+const Chat: React.FC<ChatProps> = ({ messages, currentUser, isHost, onSendMessage, onDeleteMessage, hideTitle }) => {
     const [newMessage, setNewMessage] = useState('');
     const messagesEndRef = useRef<null | HTMLDivElement>(null);
 
@@ -33,7 +34,7 @@ const Chat: React.FC<ChatProps> = ({ messages, currentUser, isHost, onSendMessag
 
     return (
         <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 flex flex-col h-full">
-            <h3 className="text-xl font-bold mb-4 text-cyan-400 flex-shrink-0">Group Chat</h3>
+            {!hideTitle && <h3 className="text-xl font-bold mb-4 text-cyan-400 flex-shrink-0">Group Chat</h3>}
             <div className="flex-grow overflow-y-auto pr-2">
                 {messages.length === 0 ? (
                     <p className="text-gray-500 italic text-center mt-4">No messages yet. Say hi!</p>

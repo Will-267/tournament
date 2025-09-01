@@ -8,7 +8,7 @@ import ShareLink from './components/ShareLink';
 import { websocketClient } from './websocket';
 import Chat from './components/Chat';
 import NotFoundPage from './NotFoundPage';
-import { ChatIcon } from './components/IconComponents';
+import { ChatIcon, CloseIcon } from './components/IconComponents';
 
 interface TournamentPageProps {
     tournamentId: string;
@@ -160,13 +160,20 @@ const TournamentPage: React.FC<TournamentPageProps> = ({ tournamentId, currentUs
                             onClick={() => setIsChatVisible(false)}
                         ></div>
                         {/* Chat Panel */}
-                        <div className="absolute top-0 right-0 bottom-0 w-full max-w-sm bg-gray-900 shadow-xl p-4">
+                        <div className="absolute bottom-0 left-0 right-0 h-[85%] bg-gray-900 border-t border-gray-700 shadow-2xl rounded-t-2xl p-4 flex flex-col">
+                            <div className="flex-shrink-0 flex items-center justify-between pb-4">
+                                <h3 className="text-xl font-bold text-cyan-400">Group Chat</h3>
+                                <button onClick={() => setIsChatVisible(false)} className="text-gray-400 hover:text-white p-1 rounded-full">
+                                    <CloseIcon className="w-6 h-6" />
+                                </button>
+                            </div>
                             <Chat 
                                 messages={tournament.chatMessages || []}
                                 currentUser={currentUser}
                                 onSendMessage={handleSendChatMessage}
                                 isHost={isHost}
                                 onDeleteMessage={isHost ? handleDeleteChatMessage : undefined}
+                                hideTitle={true}
                             />
                         </div>
                     </div>
