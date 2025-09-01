@@ -5,7 +5,7 @@ export enum TournamentStage {
     FINISHED = 'FINISHED',
 }
 
-export type RegistrationType = 'LOBBY' | 'MANUAL';
+export type TournamentType = 'FREE' | 'PAID_PARTICIPANTS' | 'EXCLUSIVE';
 
 export interface User {
     id: string;
@@ -55,14 +55,25 @@ export interface KnockoutMatch {
     rounds: Match[][];
 }
 
+export interface ChatMessage {
+    id: string;
+    author: string;
+    text: string;
+    timestamp: number;
+}
+
 export interface Tournament {
     id: string;
     name: string;
+    game: string;
     createdBy: string; // username of creator
     stage: TournamentStage;
-    registrationType: RegistrationType; // New field
+    tournamentType: TournamentType;
+    participantPrice: number;
+    spectatorPrice: number;
     players: Player[]; // players who have joined
     groups: Group[];
     matches: Match[];
     knockoutMatches: KnockoutMatch;
+    chatMessages: ChatMessage[];
 }

@@ -27,7 +27,16 @@ export const getTournamentById = (id) => {
 };
 
 export const createTournament = (tournamentData) => {
-    const newTournament = { ...tournamentData, id: uuidv4() };
+    const newTournament = {
+        ...tournamentData,
+        id: uuidv4(),
+        // Add defaults for new fields if not provided from the client
+        game: tournamentData.game || 'Untitled Game',
+        tournamentType: tournamentData.tournamentType || 'FREE',
+        participantPrice: tournamentData.participantPrice || 0,
+        spectatorPrice: tournamentData.spectatorPrice || 0,
+        chatMessages: [],
+     };
     tournaments.push(newTournament);
     return newTournament;
 };
@@ -40,4 +49,13 @@ export const updateTournament = (id, updatedData) => {
         return tournaments[index];
     }
     return null;
+};
+
+export const deleteTournament = (id) => {
+    const index = tournaments.findIndex(t => t.id === id);
+    if (index > -1) {
+        tournaments.splice(index, 1);
+        return true;
+    }
+    return false;
 };

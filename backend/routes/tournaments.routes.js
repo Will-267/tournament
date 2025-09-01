@@ -32,4 +32,15 @@ router.put('/:id', (req, res) => {
     }
 });
 
+router.delete('/:id', (req, res) => {
+    const success = db.deleteTournament(req.params.id);
+    if (success) {
+        // Broadcast that an update happened. Clients refetching will see it's gone.
+        broadcastUpdate(req.params.id);
+        res.status(204).send();
+    } else {
+        res.status(404).json({ message: 'Tournament not found' });
+    }
+});
+
 export default router;

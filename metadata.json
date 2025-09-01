@@ -1,5 +1,5 @@
 {
-  "name": "PES Tournament Hub",
-  "description": "A web application for hosting and viewing PES football tournaments. Features user sign-up/login, a central tournament dashboard, and role-based views for hosts and viewers.",
+  "name": "Tournament Manager by NE Studios",
+  "description": "A platform for creating, managing, and participating in tournaments for any game. Features real-time chat, live stream integration, and monetization options.",
   "requestFramePermissions": []
 }

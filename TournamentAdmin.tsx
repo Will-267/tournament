@@ -58,8 +58,8 @@ const LobbyRegistration: React.FC<{ tournament: Tournament, onStart: () => void 
                 </div>
             </div>
             <div className="lg:col-span-2 text-center mt-4">
-                <button onClick={onStart} disabled={!canStart} className="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform hover:scale-105 w-full max-w-md flex items-center justify-center gap-2 disabled:bg-gray-500 disabled:cursor-not-allowed disabled:scale-100">
-                    Generate Groups & Start Tournament <ArrowRightIcon />
+                 <button onClick={onStart} disabled={!canStart} className="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform hover:scale-105 w-full max-w-md flex items-center justify-center gap-2 disabled:bg-gray-500 disabled:cursor-not-allowed disabled:scale-100">
+                    Generate Groups & Start <ArrowRightIcon />
                 </button>
                  {!canStart && <p className="text-xs text-gray-400 mt-2">Requires a minimum of {MIN_PLAYERS} players to start.</p>}
             </div>
@@ -369,9 +369,12 @@ const TournamentHostView: React.FC<TournamentHostViewProps> = ({ tournament, onT
     const renderContent = () => {
         switch (tournament.stage) {
             case TournamentStage.REGISTRATION:
-                if (tournament.registrationType === 'LOBBY') {
+                // For now, both tournament types have the same registration view for the host.
+                // This can be expanded later. "Manual" type is not present in creation anymore but old data might have it.
+                if (tournament.tournamentType === 'FREE' || tournament.tournamentType === 'PAID_PARTICIPANTS' || tournament.tournamentType === 'EXCLUSIVE') {
                     return <LobbyRegistration tournament={tournament} onStart={handleStartLobbyTournament} />;
                 }
+                // Fallback for old 'MANUAL' type tournaments
                 return <ManualSetupRegistration tournament={tournament} onUpdate={onTournamentUpdate} onStart={handleStartManualTournament} />;
 
             case TournamentStage.GROUP_STAGE:

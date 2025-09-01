@@ -28,8 +28,9 @@ const AuthPage: React.FC = () => {
             <div className="w-full max-w-md">
                  <header className="text-center mb-8">
                     <h1 className="text-5xl font-extrabold tracking-tight bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent">
-                        PES Tournament Hub
+                        Tournament Manager
                     </h1>
+                    <p className="text-gray-400 text-lg">by NE Studios</p>
                 </header>
                 <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-8 shadow-2xl shadow-cyan-500/10">
                     <h2 className="text-3xl font-bold text-center mb-6 text-cyan-400">

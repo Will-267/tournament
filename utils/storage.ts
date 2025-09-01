@@ -22,3 +22,7 @@ export const createTournament = async (tournamentData: Omit<Tournament, 'id'>): 
 export const updateTournament = async (tournament: Tournament): Promise<Tournament> => {
     return api.put<Tournament>(`/tournaments/${tournament.id}`, tournament);
 };
+
+export const deleteTournament = async (id: string): Promise<void> => {
+    return api.del(`/tournaments/${id}`);
+};

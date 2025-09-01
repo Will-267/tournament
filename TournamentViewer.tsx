@@ -32,44 +32,6 @@ const RegistrationView: React.FC<{ tournament: Tournament }> = ({ tournament }) 
     </div>
 );
 
-const ManualSetupView: React.FC<{ tournament: Tournament }> = ({ tournament }) => (
-    <div className="max-w-4xl mx-auto">
-        <h2 className="text-3xl font-bold mb-6 text-cyan-400 text-center">Tournament Setup in Progress</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-                 <h3 className="text-xl font-semibold mb-2 flex items-center gap-2">
-                    <UsersIcon /> Registered Players ({tournament.players.length})
-                </h3>
-                <ul className="space-y-2">
-                    {tournament.players.map(p => (
-                        <li key={p.id} className="bg-gray-700 rounded p-2 text-sm">
-                            {p.name} <span className="text-cyan-300 text-xs">({p.teamName})</span>
-                        </li>
-                    ))}
-                </ul>
-            </div>
-             <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-                 <h3 className="text-xl font-semibold mb-2 flex items-center gap-2">
-                    Groups
-                </h3>
-                {tournament.groups.length > 0 ? (
-                    <div className="space-y-4">
-                        {tournament.groups.map(g => (
-                            <div key={g.id}>
-                                <h4 className="font-semibold text-cyan-300">{g.name} ({g.players.length} players)</h4>
-                                <ul className="text-sm text-gray-300 pl-4 list-disc list-inside">
-                                    {g.players.map(p => <li key={p.id}>{p.name}</li>)}
-                                </ul>
-                            </div>
-                        ))}
-                    </div>
-                ) : <p className="text-gray-500 italic">The host is setting up the groups.</p>}
-            </div>
-        </div>
-    </div>
-);
-
-
 const TournamentPublicView: React.FC<TournamentPublicViewProps> = ({ tournament, currentUser, onTournamentUpdate }) => {
     const [showJoinModal, setShowJoinModal] = useState(false);
     const [isJoining, setIsJoining] = useState(false);
@@ -94,6 +56,8 @@ const TournamentPublicView: React.FC<TournamentPublicViewProps> = ({ tournament,
     const handleJoin = (teamName: string) => {
         if (!currentUser) return;
         setIsJoining(true);
+        // In a real app, this would trigger a payment flow for paid tournaments.
+        // For now, we just add the player.
         const newPlayer: Player = {
             id: currentUser.id,
             name: currentUser.username,
@@ -109,7 +73,7 @@ const TournamentPublicView: React.FC<TournamentPublicViewProps> = ({ tournament,
     };
     
     const isPlayerRegistered = useMemo(() => tournament.players.some(p => p.id === currentUser?.id), [tournament.players, currentUser]);
-    const canJoin = currentUser && !isPlayerRegistered && tournament.stage === TournamentStage.REGISTRATION && tournament.registrationType === 'LOBBY';
+    const canJoin = currentUser && !isPlayerRegistered && tournament.stage === TournamentStage.REGISTRATION;
 
     const renderContent = () => {
         if (winner) {
@@ -126,9 +90,7 @@ const TournamentPublicView: React.FC<TournamentPublicViewProps> = ({ tournament,
 
         switch (tournament.stage) {
             case TournamentStage.REGISTRATION:
-                return tournament.registrationType === 'LOBBY' 
-                    ? <RegistrationView tournament={tournament} />
-                    : <ManualSetupView tournament={tournament} />;
+                return <RegistrationView tournament={tournament} />;
             case TournamentStage.GROUP_STAGE:
                 return <GroupStageView 
                             groups={tournament.groups} 
@@ -154,8 +116,12 @@ const TournamentPublicView: React.FC<TournamentPublicViewProps> = ({ tournament,
             {canJoin && (
                 <div className="text-center mb-6">
                     <button onClick={() => setShowJoinModal(true)} className="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform hover:scale-105">
-                        Join Tournament
+                        Join Tournament 
+                        {tournament.tournamentType !== 'FREE' && ` ($${tournament.participantPrice})`}
                     </button>
+                    {tournament.tournamentType === 'EXCLUSIVE' && (
+                        <p className="text-xs text-gray-400 mt-1">Spectator Fee: ${tournament.spectatorPrice}</p>
+                    )}
                 </div>
             )}
             {isPlayerRegistered && tournament.stage === TournamentStage.REGISTRATION && (
