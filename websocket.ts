@@ -1,9 +1,7 @@
-
-
 const getWebSocketURL = () => {
+    // The WebSocket server is assumed to be running on the same host as the web server.
+    // This logic constructs the correct WebSocket URL (ws:// or wss://) based on the page's protocol.
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    // Connect to the same host that serves the page, letting the proxy handle it.
-    // Netlify and other modern hosts will automatically proxy WebSocket connections.
     return `${protocol}//${window.location.host}`;
 };
 

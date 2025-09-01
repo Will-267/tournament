@@ -1,3 +1,5 @@
+// API requests will be sent to the same origin as the frontend.
+// This works with Vercel's rewrite rules or a reverse proxy setup.
 const API_BASE_URL = '';
 
 async function request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {

@@ -2,30 +2,19 @@
 import express from 'express';
 import cors from 'cors';
 import http from 'http';
-import path from 'path';
-import { fileURLToPath } from 'url';
 import authRoutes from './routes/auth.routes.js';
 import tournamentRoutes from './routes/tournaments.routes.js';
 import { initWebSocketServer } from './services/websocket.service.js';
 
 // --- CRITICAL: Process-level error handling ---
-// This acts as a last-resort safety net. If an error occurs that would
-// normally crash the entire Node.js process, this will catch it.
 process.on('uncaughtException', (err, origin) => {
     console.error(`Caught exception: ${err}\n` + `Exception origin: ${origin}`);
-    // In a real production app, you might want to gracefully shut down here.
-    // For this app, we'll log it to ensure it's visible.
 });
 
 
 const app = express();
-const port = 3001;
-
-// --- ES Module boilerplate for __dirname ---
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const rootPath = path.join(__dirname, '..');
-
+// Render provides the PORT environment variable.
+const PORT = process.env.PORT || 10000;
 
 // --- Middleware ---
 app.use(cors());
@@ -41,31 +30,17 @@ app.use((req, res, next) => {
 app.use('/auth', authRoutes);
 app.use('/tournaments', tournamentRoutes);
 
-
-// --- Serve Frontend Static Files ---
-app.use(express.static(rootPath));
-
-// --- SPA Fallback ---
-// For any GET request that doesn't match an API route or a static file,
-// send the index.html file. This is crucial for single-page applications.
-app.get('*', (req, res) => {
-    res.sendFile(path.join(rootPath, 'index.html'));
-});
-
-
-// --- Server and WebSocket Setup ---
-const server = http.createServer(app);
-
-initWebSocketServer(server);
-
 // --- Global Error Handling Middleware ---
-// This is a catch-all for any unhandled errors within the Express request-response cycle.
 app.use((err, req, res, next) => {
     console.error('An unexpected error occurred:', err.stack);
     res.status(500).json({ message: 'Internal Server Error' });
 });
 
+// --- Server and WebSocket Setup ---
+const server = http.createServer(app);
+initWebSocketServer(server);
 
-server.listen(port, () => {
-    console.log(`Backend server listening at http://localhost:${port}`);
+// --- Start Server ---
+server.listen(PORT, () => {
+    console.log(`Server listening on port ${PORT}`);
 });
