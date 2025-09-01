@@ -13,7 +13,8 @@ interface ExportPDFProps {
 const ExportPDF: React.FC<ExportPDFProps> = ({ tournament }) => {
     const handleExport = () => {
         const doc = new jsPDF();
-        const standings = calculateAllStandings(tournament.groups, tournament.matches);
+        // FIX: Guard against tournament.groups being undefined.
+        const standings = calculateAllStandings(tournament.groups || [], tournament.matches);
 
         doc.setFontSize(18);
         doc.text(tournament.name, 14, 22);
@@ -23,7 +24,8 @@ const ExportPDF: React.FC<ExportPDFProps> = ({ tournament }) => {
 
         let startY = 35;
 
-        tournament.groups.forEach((group, index) => {
+        // FIX: Guard against tournament.groups being undefined.
+        (tournament.groups || []).forEach((group, index) => {
             const groupStandings = standings[group.id] || [];
             
             if (groupStandings.length > 0) {

@@ -1,10 +1,3 @@
-export enum TournamentStage {
-    REGISTRATION = 'REGISTRATION',
-    GROUP_STAGE = 'GROUP_STAGE',
-    KNOCKOUT_STAGE = 'KNOCKOUT_STAGE',
-    FINISHED = 'FINISHED',
-}
-
 export type TournamentType = 'FREE' | 'PAID_PARTICIPANTS' | 'EXCLUSIVE';
 
 export interface User {
@@ -25,12 +18,21 @@ export interface Match {
     homeScore: number | null;
     awayScore: number | null;
     played: boolean;
-    group?: string;
-    round?: string;
     fen?: string; // Forsyth-Edwards Notation for chess board state
     pgn?: string; // Portable Game Notation for move history
+    // FIX: Add optional group and round properties for legacy components.
+    group?: string;
+    round?: string;
 }
 
+export interface ChatMessage {
+    id: string;
+    author: string;
+    text: string;
+    timestamp: number;
+}
+
+// FIX: Add types for legacy group and knockout components.
 export interface Group {
     id: string;
     name: string;
@@ -41,27 +43,17 @@ export interface Standing {
     playerId: string;
     playerName: string;
     teamName: string;
+    rank: number;
     played: number;
     wins: number;
     draws: number;
     losses: number;
-    goalsFor: number;
-    goalsAgainst: number;
     goalDifference: number;
     points: number;
-    rank: number;
-    groupName: string;
 }
 
 export interface KnockoutMatch {
-    rounds: Match[][];
-}
-
-export interface ChatMessage {
-    id: string;
-    author: string;
-    text: string;
-    timestamp: number;
+    rounds: (Match | null)[][];
 }
 
 export interface Tournament {
@@ -69,13 +61,13 @@ export interface Tournament {
     name: string;
     game: string;
     createdBy: string; // username of creator
-    stage: TournamentStage;
     tournamentType: TournamentType;
     participantPrice: number;
     spectatorPrice: number;
     players: Player[]; // players who have joined
-    groups: Group[];
     matches: Match[];
-    knockoutMatches: KnockoutMatch;
     chatMessages: ChatMessage[];
+    // FIX: Add optional properties for legacy group and knockout components.
+    groups?: Group[];
+    knockoutBracket?: KnockoutMatch;
 }

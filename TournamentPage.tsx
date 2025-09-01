@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getTournamentById, updateTournament } from './utils/storage';
-import { Tournament, TournamentStage, ChatMessage } from './types';
+import { Tournament, ChatMessage } from './types';
 import { User } from './utils/auth';
 import TournamentHostView from './TournamentAdmin';
 import TournamentPublicView from './TournamentViewer';
 import ShareLink from './components/ShareLink';
 import { websocketClient } from './websocket';
-import ExportPDF from './components/ExportPDF';
 import VideoStream from './components/VideoStream';
 import Chat from './components/Chat';
 import NotFoundPage from './NotFoundPage';
@@ -102,12 +101,6 @@ const TournamentPage: React.FC<TournamentPageProps> = ({ tournamentId, currentUs
                         <a href="#/" className="text-cyan-400 hover:underline">Back to Dashboard</a>
                         <span className="text-gray-600 hidden sm:inline">|</span>
                         <ShareLink />
-                        {(tournament.stage === TournamentStage.GROUP_STAGE || tournament.stage === TournamentStage.KNOCKOUT_STAGE || tournament.stage === TournamentStage.FINISHED) && (
-                            <>
-                                <span className="text-gray-600 hidden sm:inline">|</span>
-                                <ExportPDF tournament={tournament} />
-                            </>
-                        )}
                      </div>
                 </header>
                 <main className="animate-[fadeIn_0.5s_ease-in-out]">

@@ -1,15 +1,14 @@
-
 import React, { useState, useEffect } from 'react';
-import { Group } from '../types';
+import { Player } from '../types';
 import { CloseIcon } from './IconComponents';
 
-interface AddFixtureModalProps {
-    group: Group;
+interface CreateMatchModalProps {
+    players: Player[];
     onClose: () => void;
-    onSave: (groupId: string, homePlayerId: string, awayPlayerId: string) => void;
+    onSave: (homePlayerId: string, awayPlayerId: string) => void;
 }
 
-const AddFixtureModal: React.FC<AddFixtureModalProps> = ({ group, onClose, onSave }) => {
+const CreateMatchModal: React.FC<CreateMatchModalProps> = ({ players, onClose, onSave }) => {
     const [homePlayerId, setHomePlayerId] = useState<string>('');
     const [awayPlayerId, setAwayPlayerId] = useState<string>('');
     const [error, setError] = useState('');
@@ -35,17 +34,17 @@ const AddFixtureModal: React.FC<AddFixtureModalProps> = ({ group, onClose, onSav
         }
 
         setError('');
-        onSave(group.id, homePlayerId, awayPlayerId);
+        onSave(homePlayerId, awayPlayerId);
     };
 
-    const awayPlayerOptions = group.players.filter(p => p.id !== homePlayerId);
+    const awayPlayerOptions = players.filter(p => p.id !== homePlayerId);
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={onClose}>
             <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-xl w-full max-w-lg text-white" onClick={(e) => e.stopPropagation()}>
                 <div className="p-6">
                     <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-2xl font-bold text-cyan-400">Add Fixture for {group.name}</h2>
+                        <h2 className="text-2xl font-bold text-cyan-400">Create New Match</h2>
                         <button onClick={onClose} className="text-gray-400 hover:text-white">
                             <CloseIcon />
                         </button>
@@ -53,14 +52,14 @@ const AddFixtureModal: React.FC<AddFixtureModalProps> = ({ group, onClose, onSav
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-6">
                          <div>
-                            <label htmlFor="homePlayer" className="block text-sm font-semibold mb-1">Home Player</label>
+                            <label htmlFor="homePlayer" className="block text-sm font-semibold mb-1">Player 1 (White)</label>
                             <select id="homePlayer" value={homePlayerId} onChange={e => setHomePlayerId(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none">
                                 <option value="" disabled>Select Player</option>
-                                {group.players.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                                {players.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                             </select>
                         </div>
                          <div>
-                            <label htmlFor="awayPlayer" className="block text-sm font-semibold mb-1">Away Player</label>
+                            <label htmlFor="awayPlayer" className="block text-sm font-semibold mb-1">Player 2 (Black)</label>
                             <select id="awayPlayer" value={awayPlayerId} onChange={e => setAwayPlayerId(e.target.value)} className="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none" disabled={!homePlayerId}>
                                 <option value="" disabled>Select Player</option>
                                 {awayPlayerOptions.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
@@ -75,7 +74,7 @@ const AddFixtureModal: React.FC<AddFixtureModalProps> = ({ group, onClose, onSav
                             Cancel
                         </button>
                         <button onClick={handleSave} className="bg-cyan-600 hover:bg-cyan-500 rounded-lg px-6 py-2 font-semibold transition-colors">
-                            Save Fixture
+                            Create Match
                         </button>
                     </div>
                 </div>
@@ -84,4 +83,4 @@ const AddFixtureModal: React.FC<AddFixtureModalProps> = ({ group, onClose, onSav
     );
 };
 
-export default AddFixtureModal;
+export default CreateMatchModal;

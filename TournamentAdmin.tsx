@@ -1,233 +1,36 @@
-import React, { useState, useMemo } from 'react';
-import { Tournament, Match, TournamentStage, Player, Group, User } from './types';
-import { 
-    calculateAllStandings, 
-    determineKnockoutQualifiers, 
-    generateKnockoutBracket
-} from './utils/tournament';
-import { TrophyIcon, ArrowRightIcon, UsersIcon, CloseIcon, LinkIcon } from './components/IconComponents';
-import GroupStageView from './components/GroupStageView';
-import KnockoutBracket from './components/KnockoutBracket';
-import ScoreModal from './components/ScoreModal';
+import React, { useState } from 'react';
+import { Tournament, Match, Player, User } from './types';
+import { UsersIcon, LinkIcon } from './components/IconComponents';
 import ChessGame from './components/ChessGame';
 import AddFixtureModal from './components/AddFixtureModal';
 import { Chess } from 'chess.js';
 
-const MIN_PLAYERS = 2;
-
-const LobbyRegistration: React.FC<{ tournament: Tournament, onStart: () => void }> = ({ tournament, onStart }) => {
-    const [copied, setCopied] = useState(false);
-    const url = window.location.href;
-
-    const handleCopy = () => {
-        navigator.clipboard.writeText(url).then(() => {
-            setCopied(true);
-            setTimeout(() => setCopied(false), 2000);
-        });
+const MatchListItem: React.FC<{ match: Match; onClick: (match: Match) => void; isClickable: boolean; }> = ({ match, onClick, isClickable }) => {
+    const getPlayerClasses = (score: number | null, otherScore: number | null) => {
+        let classes = "flex-1 truncate";
+        if (match.played && score !== null && otherScore !== null) {
+            if (score > otherScore) classes += " font-bold text-white";
+            else classes += " text-gray-400";
+        } else {
+            classes += " text-gray-200";
+        }
+        return classes;
     };
 
-    const canStart = tournament.players.length >= MIN_PLAYERS;
-    
+    const baseClasses = "w-full flex items-center justify-between bg-gray-800 rounded-lg p-3 text-sm transition-colors text-left";
+    const clickableClasses = isClickable ? " hover:bg-gray-700/50 cursor-pointer" : " cursor-default";
+
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-             <div>
-                <h3 className="text-2xl font-bold mb-4 text-cyan-400">Public Lobby</h3>
-                <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-                    <p className="text-gray-300 mb-4">Players can join this tournament using the public link. Once registration is closed, you can proceed to generate groups.</p>
-                    <button
-                        onClick={handleCopy}
-                        className="w-full flex items-center justify-center gap-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg px-4 py-2 font-semibold transition-colors"
-                    >
-                        <LinkIcon />
-                        {copied ? 'Link Copied!' : 'Copy Join Link'}
-                    </button>
-                </div>
-            </div>
-            <div>
-                <h3 className="text-2xl font-bold mb-4 text-cyan-400">Registered Players ({tournament.players.length})</h3>
-                <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 min-h-[200px]">
-                    {tournament.players.length > 0 ? (
-                        <ul className="space-y-2">
-                            {tournament.players.map(p => (
-                                <li key={p.id} className="bg-gray-700 rounded p-2 text-sm">
-                                    {p.name} <span className="text-cyan-300 text-xs">({p.teamName})</span>
-                                </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <p className="text-gray-500 italic">No players have registered yet.</p>
-                    )}
-                </div>
-            </div>
-            <div className="lg:col-span-2 text-center mt-4">
-                 <button onClick={onStart} disabled={!canStart} className="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform hover:scale-105 w-full max-w-md flex items-center justify-center gap-2 disabled:bg-gray-500 disabled:cursor-not-allowed disabled:scale-100">
-                    Generate Groups & Start <ArrowRightIcon />
-                </button>
-                 {!canStart && <p className="text-xs text-gray-400 mt-2">Requires a minimum of {MIN_PLAYERS} players to start.</p>}
-            </div>
-        </div>
+        <button onClick={() => isClickable && onClick(match)} className={baseClasses + clickableClasses} disabled={!isClickable}>
+            <span className={getPlayerClasses(match.homeScore, match.awayScore) + " text-right"}>{match.homeTeam.name}</span>
+            <span className={`font-bold px-3 rounded mx-3 text-xs ${match.played ? 'bg-cyan-600' : 'bg-gray-600'}`}>
+                {match.played ? `${match.homeScore} - ${match.awayScore}` : 'vs'}
+            </span>
+            <span className={getPlayerClasses(match.awayScore, match.homeScore) + " text-left"}>{match.awayTeam.name}</span>
+        </button>
     );
 };
 
-
-const ManualSetupRegistration: React.FC<{ tournament: Tournament, onUpdate: (t: Tournament) => void, onStart: () => void }> = ({ tournament, onUpdate, onStart }) => {
-    const [newPlayerName, setNewPlayerName] = useState('');
-    const [newTeamName, setNewTeamName] = useState('');
-    const [newGroupName, setNewGroupName] = useState('');
-    const [playerAddError, setPlayerAddError] = useState('');
-
-    const handleAddPlayer = (e: React.FormEvent) => {
-        e.preventDefault();
-        setPlayerAddError('');
-        const trimmedPlayerName = newPlayerName.trim();
-        const trimmedTeamName = newTeamName.trim();
-
-        if (!trimmedPlayerName) {
-            setPlayerAddError('Player name cannot be empty.');
-            return;
-        }
-        if (!trimmedTeamName) {
-            setPlayerAddError('Team name is required.');
-            return;
-        }
-
-        const isNameTaken = tournament.players.some(p => p.name?.toLowerCase() === trimmedPlayerName.toLowerCase());
-        if (isNameTaken) {
-            setPlayerAddError(`Player name "${trimmedPlayerName}" is already taken.`);
-            return;
-        }
-
-        const isTeamTaken = tournament.players.some(p => p.teamName?.toLowerCase() === trimmedTeamName.toLowerCase());
-        if (isTeamTaken) {
-            setPlayerAddError(`Team "${trimmedTeamName}" is already taken.`);
-            return;
-        }
-
-        const newPlayer: Player = {
-            id: `p${Date.now()}`,
-            name: trimmedPlayerName,
-            teamName: trimmedTeamName
-        };
-        onUpdate({ ...tournament, players: [...tournament.players, newPlayer] });
-        setNewPlayerName('');
-        setNewTeamName('');
-    };
-
-    const handleRemovePlayer = (playerId: string) => {
-        const updatedGroups = tournament.groups.map(g => ({
-            ...g,
-            players: g.players.filter(p => p.id !== playerId)
-        }));
-        onUpdate({
-            ...tournament,
-            players: tournament.players.filter(p => p.id !== playerId),
-            groups: updatedGroups
-        });
-    };
-    
-    const handleAddGroup = (e: React.FormEvent) => {
-        e.preventDefault();
-        if(!newGroupName.trim()) return;
-        const newGroup: Group = {
-            id: `g${Date.now()}`,
-            name: newGroupName.trim(),
-            players: []
-        };
-        onUpdate({ ...tournament, groups: [...tournament.groups, newGroup] });
-        setNewGroupName('');
-    }
-
-    const handleAssignPlayerToGroup = (playerId: string, groupId: string) => {
-        const player = tournament.players.find(p => p.id === playerId);
-        if (!player) return;
-
-        // Remove player from any previous group
-        const groupsWithoutPlayer = tournament.groups.map(g => ({
-            ...g,
-            players: g.players.filter(p => p.id !== playerId)
-        }));
-
-        const targetGroup = groupsWithoutPlayer.find(g => g.id === groupId);
-        if (targetGroup) {
-            targetGroup.players.push(player);
-        }
-        onUpdate({ ...tournament, groups: groupsWithoutPlayer });
-    };
-
-    const unassignedPlayers = tournament.players.filter(p =>
-        !tournament.groups.some(g => g.players.some(gp => gp.id === p.id))
-    );
-
-    const canStart = tournament.players.length >= MIN_PLAYERS && unassignedPlayers.length === 0 && tournament.groups.every(g => g.players.length > 1);
-
-    return (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* Player Management */}
-            <div>
-                <h3 className="text-2xl font-bold mb-4 text-cyan-400">Player Setup</h3>
-                <form onSubmit={handleAddPlayer} className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
-                    <input type="text" value={newPlayerName} onChange={e => setNewPlayerName(e.target.value)} placeholder="Player Name" className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none" />
-                    <input type="text" value={newTeamName} onChange={e => setNewTeamName(e.target.value)} placeholder="Team Name" className="bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none" />
-                    <button type="submit" className="sm:col-span-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg px-4 py-2 font-semibold text-sm">Add Player</button>
-                </form>
-                {playerAddError && <p className="text-red-400 text-sm mb-2 text-center">{playerAddError}</p>}
-                 <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 min-h-[200px]">
-                    <h4 className="font-semibold mb-2 flex items-center gap-2"><UsersIcon /> Registered Players ({tournament.players.length})</h4>
-                    <ul className="space-y-2">
-                        {tournament.players.map(p => (
-                            <li key={p.id} className="flex items-center justify-between bg-gray-700 rounded p-2 text-sm">
-                                <span>{p.name} <span className="text-cyan-300 text-xs">({p.teamName})</span></span>
-                                <button onClick={() => handleRemovePlayer(p.id)} className="text-red-400 hover:text-red-300"><CloseIcon className="w-4 h-4" /></button>
-                            </li>
-                        ))}
-                    </ul>
-                 </div>
-            </div>
-
-            {/* Group Management */}
-            <div>
-                 <h3 className="text-2xl font-bold mb-4 text-cyan-400">Group Assignment</h3>
-                 <form onSubmit={handleAddGroup} className="flex gap-2 mb-4">
-                    <input type="text" value={newGroupName} onChange={e => setNewGroupName(e.target.value)} placeholder="e.g., Room A" className="flex-grow bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none" />
-                    <button type="submit" className="bg-cyan-600 hover:bg-cyan-500 rounded-lg px-4 py-2 font-semibold text-sm">Create Group</button>
-                 </form>
-                 <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 min-h-[200px]">
-                    {unassignedPlayers.length > 0 && (
-                        <div className="mb-4">
-                            <h4 className="font-semibold mb-2 text-yellow-400">Unassigned Players ({unassignedPlayers.length})</h4>
-                            <ul className="space-y-2">
-                               {unassignedPlayers.map(p => (
-                                   <li key={p.id} className="flex items-center justify-between bg-gray-700 rounded p-2 text-sm">
-                                       <span>{p.name} <span className="text-cyan-300 text-xs">({p.teamName})</span></span>
-                                       <select onChange={e => handleAssignPlayerToGroup(p.id, e.target.value)} value="" className="bg-gray-600 text-xs rounded p-1 border-gray-500 focus:outline-none">
-                                            <option value="" disabled>Assign to...</option>
-                                            {tournament.groups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-                                       </select>
-                                   </li>
-                               ))}
-                            </ul>
-                        </div>
-                    )}
-                    {tournament.groups.map(g => (
-                        <div key={g.id} className="mb-2">
-                            <h4 className="font-semibold text-cyan-300">{g.name} ({g.players.length})</h4>
-                             <ul className="text-sm text-gray-300 pl-4 list-disc list-inside">
-                                {g.players.map(p => <li key={p.id}>{p.name}</li>)}
-                            </ul>
-                        </div>
-                    ))}
-                 </div>
-            </div>
-            
-            <div className="lg:col-span-2 text-center mt-4">
-                <button onClick={onStart} disabled={!canStart} className="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform hover:scale-105 w-full max-w-md flex items-center justify-center gap-2 disabled:bg-gray-500 disabled:cursor-not-allowed disabled:scale-100">
-                    Lock Groups & Start Tournament <ArrowRightIcon />
-                </button>
-                 {!canStart && <p className="text-xs text-gray-400 mt-2">{`Requires min. ${MIN_PLAYERS} players, all players assigned to a group, and each group to have at least 2 players.`}</p>}
-            </div>
-        </div>
-    );
-};
 
 interface TournamentHostViewProps {
     tournament: Tournament;
@@ -237,110 +40,36 @@ interface TournamentHostViewProps {
 
 const TournamentHostView: React.FC<TournamentHostViewProps> = ({ tournament, onTournamentUpdate, currentUser }) => {
     const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
-    const [showAddFixtureModalForGroup, setShowAddFixtureModalForGroup] = useState<string | null>(null);
+    const [showCreateMatchModal, setShowCreateMatchModal] = useState(false);
+    const [copied, setCopied] = useState(false);
 
-    const standings = useMemo(() => {
-        if (tournament.stage !== TournamentStage.REGISTRATION && tournament.groups.length > 0) {
-            return calculateAllStandings(tournament.groups, tournament.matches);
-        }
-        return {};
-    }, [tournament]);
-    
-    const handleStartManualTournament = () => {
-         onTournamentUpdate({ 
-            ...tournament, 
-            stage: TournamentStage.GROUP_STAGE,
-        });
-    };
-    
-    const handleStartLobbyTournament = () => {
-        const shuffledPlayers = [...tournament.players].sort(() => 0.5 - Math.random());
-        let groups: Group[];
-
-        // If there are fewer than 4 players, put them all in one group to ensure matches can be played.
-        if (tournament.players.length < 4) {
-            const groupA: Group = { id: 'g1', name: 'Group A', players: shuffledPlayers };
-            groups = [groupA];
-        } else {
-            // Otherwise, split them into two groups as before.
-            const playersPerGroup = Math.ceil(tournament.players.length / 2);
-            const groupA: Group = { id: 'g1', name: 'Group A', players: shuffledPlayers.slice(0, playersPerGroup) };
-            const groupB: Group = { id: 'g2', name: 'Group B', players: shuffledPlayers.slice(playersPerGroup) };
-            groups = [groupA, groupB].filter(g => g.players.length > 0);
-        }
-        
-        onTournamentUpdate({ 
-            ...tournament, 
-            groups,
-            stage: TournamentStage.GROUP_STAGE,
+    const handleCopy = () => {
+        navigator.clipboard.writeText(window.location.href).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
         });
     };
 
-    const handleMatchClick = (match: Match) => {
-        setSelectedMatch(match);
-    };
-
-    const handleSaveScore = (matchId: string, homeScore: number, awayScore: number) => {
-        let updatedTournament = { ...tournament };
-        
-        const updateMatchList = (matches: Match[]) => {
-            return matches.map(m =>
-                m.id === matchId ? { ...m, homeScore, awayScore, played: true } : m
-            );
-        };
-        
-        if (tournament.stage === TournamentStage.GROUP_STAGE) {
-            updatedTournament.matches = updateMatchList(tournament.matches);
-        } else if (tournament.stage === TournamentStage.KNOCKOUT_STAGE) {
-            const newRounds = tournament.knockoutMatches.rounds.map(round => updateMatchList(round));
-            updatedTournament.knockoutMatches = { ...tournament.knockoutMatches, rounds: newRounds };
-
-            // Advance winner to the next round
-            const match = newRounds.flat().find(m => m.id === matchId);
-            if(match) {
-                 const winner = homeScore > awayScore ? match.homeTeam : match.awayTeam;
-                 const roundIndex = newRounds.findIndex(r => r.some(m => m.id === matchId));
-                 const matchIndex = newRounds[roundIndex].findIndex(m => m.id === matchId);
-
-                 if(roundIndex + 1 < newRounds.length) {
-                     const nextRoundMatchIndex = Math.floor(matchIndex / 2);
-                     const nextMatch = newRounds[roundIndex + 1][nextRoundMatchIndex];
-                     if (matchIndex % 2 === 0) {
-                         nextMatch.homeTeam = winner;
-                     } else {
-                         nextMatch.awayTeam = winner;
-                     }
-                 }
-            }
-        }
-        
-        onTournamentUpdate(updatedTournament);
-        setSelectedMatch(null);
-    };
-    
     const handleUpdateChessMatch = (updatedMatch: Match) => {
-        let updatedTournament = { ...tournament };
-
-        const updateMatchInList = (matches: Match[]) => {
-            return matches.map(m => m.id === updatedMatch.id ? updatedMatch : m);
+        const updatedTournament = {
+            ...tournament,
+            matches: tournament.matches.map(m => m.id === updatedMatch.id ? updatedMatch : m)
         };
-
-        if (tournament.stage === TournamentStage.GROUP_STAGE) {
-            updatedTournament.matches = updateMatchInList(tournament.matches);
-        } else if (tournament.stage === TournamentStage.KNOCKOUT_STAGE) {
-            const newRounds = tournament.knockoutMatches.rounds.map(round => updateMatchInList(round));
-            updatedTournament.knockoutMatches = { ...tournament.knockoutMatches, rounds: newRounds };
-        }
-        
         onTournamentUpdate(updatedTournament);
+
+        // Close modal if game is over
+        if (updatedMatch.played) {
+            setSelectedMatch(null);
+        }
     };
     
-    const handleSaveNewFixture = (groupId: string, homePlayerId: string, awayPlayerId: string) => {
+    const handleSaveNewMatch = (homePlayerId: string, awayPlayerId: string) => {
         const homeTeam = tournament.players.find(p => p.id === homePlayerId);
         const awayTeam = tournament.players.find(p => p.id === awayPlayerId);
         
         if (!homeTeam || !awayTeam) return;
 
+        const chess = new Chess();
         const newMatch: Match = {
             id: `m${Date.now()}`,
             homeTeam,
@@ -348,14 +77,9 @@ const TournamentHostView: React.FC<TournamentHostViewProps> = ({ tournament, onT
             homeScore: null,
             awayScore: null,
             played: false,
-            group: groupId,
+            fen: chess.fen(),
+            pgn: chess.pgn(),
         };
-
-        if (tournament.game === 'Chess') {
-            const chess = new Chess();
-            newMatch.fen = chess.fen();
-            newMatch.pgn = chess.pgn();
-        }
 
         const updatedTournament = {
             ...tournament,
@@ -363,92 +87,88 @@ const TournamentHostView: React.FC<TournamentHostViewProps> = ({ tournament, onT
         };
         
         onTournamentUpdate(updatedTournament);
-        setShowAddFixtureModalForGroup(null);
+        setShowCreateMatchModal(false);
     };
 
-    const handleProceedToKnockout = () => {
-        if (!standings) return;
-        const qualifiers = determineKnockoutQualifiers(standings, tournament.groups, tournament.players.length);
-        const knockoutBracket = generateKnockoutBracket(qualifiers);
-        
-        onTournamentUpdate({
-            ...tournament,
-            stage: TournamentStage.KNOCKOUT_STAGE,
-            knockoutMatches: knockoutBracket
-        });
-    };
-
-    const winner = useMemo(() => {
-        if (!tournament || !tournament.knockoutMatches?.rounds || tournament.knockoutMatches.rounds.length === 0) return null;
-        const lastRound = tournament.knockoutMatches.rounds[tournament.knockoutMatches.rounds.length - 1];
-        const final = lastRound?.[0];
-        if (final && final.played) {
-            return final.homeScore! > final.awayScore! ? final.homeTeam : final.awayTeam;
-        }
-        return null;
-    }, [tournament]);
-
-    if (winner) {
-         return (
-            <div className="text-center flex flex-col items-center justify-center h-full py-12">
-                <TrophyIcon className="w-32 h-32 text-yellow-400 drop-shadow-[0_0_15px_rgba(250,204,21,0.5)]" />
-                <h2 className="text-5xl font-bold mt-4 text-yellow-300">Tournament Champion!</h2>
-                <p className="text-7xl font-extrabold mt-2 text-white bg-gradient-to-r from-yellow-400 to-orange-500 bg-clip-text text-transparent animate-pulse">
-                    {winner.name}
-                </p>
-            </div>
-        );
-    }
-
-    const renderContent = () => {
-        switch (tournament.stage) {
-            case TournamentStage.REGISTRATION:
-                if (tournament.tournamentType === 'FREE' || tournament.tournamentType === 'PAID_PARTICIPANTS' || tournament.tournamentType === 'EXCLUSIVE') {
-                    return <LobbyRegistration tournament={tournament} onStart={handleStartLobbyTournament} />;
-                }
-                return <ManualSetupRegistration tournament={tournament} onUpdate={onTournamentUpdate} onStart={handleStartManualTournament} />;
-
-            case TournamentStage.GROUP_STAGE:
-                return (
-                    <div>
-                        <GroupStageView 
-                            groups={tournament.groups} 
-                            standings={standings} 
-                            matches={tournament.matches} 
-                            onMatchClick={handleMatchClick} 
-                            isHostView={true}
-                            onAddFixture={setShowAddFixtureModalForGroup}
-                        />
-                        <div className="text-center mt-8">
-                            <button onClick={handleProceedToKnockout} className="bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform hover:scale-105 flex items-center justify-center gap-2 mx-auto">
-                                Proceed to Knockout Stage <ArrowRightIcon />
-                            </button>
-                        </div>
-                    </div>
-                );
-            
-            case TournamentStage.KNOCKOUT_STAGE:
-                 return (
-                    <div>
-                        <h2 className="text-4xl font-bold text-center mb-8 text-cyan-400">Knockout Stage</h2>
-                        <KnockoutBracket bracket={tournament.knockoutMatches} onMatchClick={handleMatchClick} />
-                    </div>
-                );
-            
-            default:
-                return <p>Unknown stage</p>;
-        }
-    };
-
-    const groupForAddModal = useMemo(() => 
-        tournament.groups.find(g => g.id === showAddFixtureModalForGroup) || null,
-    [tournament.groups, showAddFixtureModalForGroup]);
+    const ongoingMatches = tournament.matches.filter(m => !m.played);
+    const completedMatches = tournament.matches.filter(m => m.played);
 
     return (
         <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-4 sm:p-8 shadow-2xl shadow-cyan-500/10">
-            {renderContent()}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Left Column: Players and Controls */}
+                <div className="lg:col-span-1 space-y-6">
+                    <div>
+                        <h3 className="text-2xl font-bold mb-4 text-cyan-400">Lobby</h3>
+                        <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
+                            <p className="text-gray-300 mb-4 text-sm">Players can join using the public link. You can start matches between any two joined players.</p>
+                            <button
+                                onClick={handleCopy}
+                                className="w-full flex items-center justify-center gap-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg px-4 py-2 font-semibold transition-colors"
+                            >
+                                <LinkIcon />
+                                {copied ? 'Link Copied!' : 'Copy Join Link'}
+                            </button>
+                        </div>
+                    </div>
+                     <div>
+                        <h3 className="text-xl font-bold mb-2 flex items-center gap-2 text-cyan-400">
+                            <UsersIcon /> Players ({tournament.players.length})
+                        </h3>
+                        <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 min-h-[200px] max-h-[400px] overflow-y-auto">
+                            {tournament.players.length > 0 ? (
+                                <ul className="space-y-2">
+                                    {tournament.players.map(p => (
+                                        <li key={p.id} className="bg-gray-700 rounded p-2 text-sm">
+                                            {p.name}
+                                        </li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className="text-gray-500 italic">No players have joined yet.</p>
+                            )}
+                        </div>
+                    </div>
+                </div>
 
-            {selectedMatch && tournament.game === 'Chess' && (
+                {/* Right Column: Matches */}
+                <div className="lg:col-span-2">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-2xl font-bold text-cyan-400">Matches</h3>
+                        <button 
+                            onClick={() => setShowCreateMatchModal(true)} 
+                            disabled={tournament.players.length < 2}
+                            className="bg-green-600 hover:bg-green-500 font-bold py-2 px-4 rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed">
+                            Create Match
+                        </button>
+                    </div>
+
+                    <div className="space-y-6">
+                        <div>
+                            <h4 className="font-semibold text-lg mb-2 text-gray-300">Ongoing Matches ({ongoingMatches.length})</h4>
+                            <div className="space-y-2">
+                                {ongoingMatches.length > 0 ? (
+                                    ongoingMatches.map(m => <MatchListItem key={m.id} match={m} onClick={setSelectedMatch} isClickable={true} />)
+                                ) : (
+                                    <p className="text-gray-500 italic text-sm">No active matches.</p>
+                                )}
+                            </div>
+                        </div>
+                         <div>
+                            <h4 className="font-semibold text-lg mb-2 text-gray-300">Completed Matches ({completedMatches.length})</h4>
+                            <div className="space-y-2">
+                                {completedMatches.length > 0 ? (
+                                    completedMatches.map(m => <MatchListItem key={m.id} match={m} onClick={setSelectedMatch} isClickable={true}/>)
+                                ) : (
+                                    <p className="text-gray-500 italic text-sm">No matches completed yet.</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {selectedMatch && (
                 <ChessGame
                     match={selectedMatch}
                     onClose={() => setSelectedMatch(null)}
@@ -456,20 +176,12 @@ const TournamentHostView: React.FC<TournamentHostViewProps> = ({ tournament, onT
                     currentUser={currentUser}
                 />
             )}
-            {selectedMatch && tournament.game !== 'Chess' && (
-                <ScoreModal 
-                    match={selectedMatch} 
-                    onClose={() => setSelectedMatch(null)} 
-                    onSave={handleSaveScore}
-                    isKnockout={tournament.stage === TournamentStage.KNOCKOUT_STAGE}
-                />
-            )}
 
-             {showAddFixtureModalForGroup && groupForAddModal && (
+            {showCreateMatchModal && (
                 <AddFixtureModal 
-                    group={groupForAddModal}
-                    onClose={() => setShowAddFixtureModalForGroup(null)}
-                    onSave={handleSaveNewFixture}
+                    players={tournament.players}
+                    onClose={() => setShowCreateMatchModal(false)}
+                    onSave={handleSaveNewMatch}
                 />
             )}
         </div>
