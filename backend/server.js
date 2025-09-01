@@ -21,9 +21,17 @@ const PORT = process.env.PORT || 10000;
 // Secure CORS configuration: Only allow requests from the frontend URL.
 const allowedOrigin = process.env.FRONTEND_URL;
 
+// --- NEW: Add a startup log for easier debugging ---
+console.log(`CORS CONFIG: Server starting. Accepting requests from origin: ${allowedOrigin}`);
+
 if (!allowedOrigin) {
     // This message will appear in the Render logs, which is very helpful for debugging.
-    console.error('FATAL: The FRONTEND_URL environment variable is not set. CORS will block all requests. Please set this variable in your Render service configuration to your Netlify URL (e.g., https://your-site.netlify.app).');
+    console.error('-------------------------------------------------------------------');
+    console.error('FATAL: The FRONTEND_URL environment variable is not set!');
+    console.error('CORS will block all requests. Please set this variable in your');
+    console.error('Render service configuration to your Netlify URL.');
+    console.error('Example -> https://your-site-name.netlify.app');
+    console.error('-------------------------------------------------------------------');
 }
 
 const corsOptions = {
