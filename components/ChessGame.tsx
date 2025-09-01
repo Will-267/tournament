@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useMemo } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
@@ -10,22 +11,23 @@ interface ChessGameProps {
 }
 
 const ChessGame: React.FC<ChessGameProps> = ({ match, onUpdateMatch, currentUser }) => {
-    const [game, setGame] = useState(new Chess());
+    // The game state is now derived directly from props, making this a controlled component.
+    // This fixes the bug where moves would appear to revert.
+    const game = useMemo(() => {
+        const g = new Chess();
+        if (match.fen) {
+            try {
+                g.load(match.fen);
+            } catch (e) {
+                console.error("Invalid FEN string from props, starting new game.", e);
+            }
+        }
+        return g;
+    }, [match.fen]);
+
     const [status, setStatus] = useState('');
 
     useEffect(() => {
-        const newGame = new Chess();
-        if (match.fen) {
-            try {
-                newGame.load(match.fen);
-            } catch (e) {
-                console.error("Failed to load FEN, starting new game.", e);
-            }
-        }
-        setGame(newGame);
-    }, [match.fen]);
-    
-     useEffect(() => {
         const updateStatus = () => {
             let moveColor = game.turn() === 'w' ? 'White' : 'Black';
 
@@ -54,14 +56,10 @@ const ChessGame: React.FC<ChessGameProps> = ({ match, onUpdateMatch, currentUser
     }, [currentUser, match]);
 
     function onDrop(sourceSquare: string, targetSquare: string) {
-        // Prevent spectators or players from moving when it's not their turn
-        if (!isPlayer || game.isGameOver()) return false;
-        if ((game.turn() === 'w' && playerColor !== 'white') || (game.turn() === 'b' && playerColor !== 'black')) {
-            return false;
-        }
-
+        // Create a copy of the game to safely test the move
         const gameCopy = new Chess(game.fen());
         let move = null;
+
         try {
             move = gameCopy.move({
                 from: sourceSquare,
@@ -69,17 +67,21 @@ const ChessGame: React.FC<ChessGameProps> = ({ match, onUpdateMatch, currentUser
                 promotion: 'q' // NOTE: always promote to a queen for simplicity
             });
         } catch (e) {
+             // This catch block handles invalid move structures, but move will be null for illegal chess moves.
             return false;
         }
 
-        // illegal move
-        if (move === null) {
+        // --- NEW: More robust validation ---
+        // 1. Is the move illegal in chess (e.g., moving through pieces)?
+        // 2. Is the current user a player in this match?
+        // 3. Is the game already over?
+        // 4. Did the player move a piece of their own color? (e.g., white player moving a white piece)
+        const pieceColor = move?.color === 'w' ? 'white' : 'black';
+        if (move === null || !isPlayer || game.isGameOver() || playerColor !== pieceColor) {
             return false;
         }
         
-        // This local update is for UI responsiveness. The true state will come from the server.
-        setGame(gameCopy);
-        
+        // If all checks pass, propagate the update.
         const updatedMatch = { ...match };
         updatedMatch.fen = gameCopy.fen();
         updatedMatch.pgn = gameCopy.pgn();
@@ -111,8 +113,8 @@ const ChessGame: React.FC<ChessGameProps> = ({ match, onUpdateMatch, currentUser
 
             <div className="w-full max-w-[400px] mx-auto my-2">
                 <Chessboard
-                     // FIX: The 'position' prop for react-chessboard was likely renamed to 'boardPosition' in the installed version, causing a type error.
-                     boardPosition={game.fen()}
+                    // FIX: The `react-chessboard` component uses the `position` prop, not `fen`, to set the board state.
+                     position={game.fen()}
                      onPieceDrop={onDrop}
                      boardOrientation={boardOrientation}
                      arePiecesDraggable={isPlayer && !game.isGameOver()}
