@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Tournament, User, Player, Match } from './types';
+import { Tournament, User, Player, Match, ChatMessage } from './types';
 import { UsersIcon } from './components/IconComponents';
 import JoinTournamentModal from './components/JoinTournamentModal';
 import ChessGame from './components/ChessGame';
@@ -33,9 +33,15 @@ interface TournamentPublicViewProps {
     onTournamentUpdate: (updatedTournament: Tournament) => void;
     activeMatch: Match | null;
     setActiveMatchId: (matchId: string | null) => void;
+    chatMessages: ChatMessage[];
+    onSendMessage: (messageText: string) => void;
+    isHost: boolean;
 }
 
-const TournamentPublicView: React.FC<TournamentPublicViewProps> = ({ tournament, currentUser, onTournamentUpdate, activeMatch, setActiveMatchId }) => {
+const TournamentPublicView: React.FC<TournamentPublicViewProps> = ({ 
+    tournament, currentUser, onTournamentUpdate, activeMatch, setActiveMatchId,
+    chatMessages, onSendMessage, isHost
+}) => {
     const [showJoinModal, setShowJoinModal] = useState(false);
     const [isJoining, setIsJoining] = useState(false);
 
@@ -73,57 +79,59 @@ const TournamentPublicView: React.FC<TournamentPublicViewProps> = ({ tournament,
 
     return (
          <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-4 sm:p-8 shadow-2xl shadow-cyan-500/10">
-            {canJoin && (
-                <div className="text-center mb-6">
-                    <button onClick={() => setShowJoinModal(true)} className="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform hover:scale-105">
-                        Join Game Room
-                        {tournament.tournamentType !== 'FREE' && ` ($${tournament.participantPrice})`}
+            {activeMatch ? (
+                <div>
+                     <button 
+                        onClick={() => setActiveMatchId(null)} 
+                        className="mb-4 bg-gray-600 hover:bg-gray-500 rounded-lg px-4 py-2 font-semibold transition-colors text-sm"
+                    >
+                        &larr; Back to Matches
                     </button>
+                    <ChessGame
+                        match={activeMatch}
+                        onUpdateMatch={handleUpdateChessMatch}
+                        currentUser={currentUser}
+                        chatMessages={chatMessages}
+                        onSendMessage={onSendMessage}
+                        isHost={isHost}
+                    />
                 </div>
-            )}
-            {isPlayerRegistered && !activeMatch && (
-                 <p className="text-center text-green-400 mb-6 font-semibold">You have joined this room!</p>
-            )}
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left Column: Players */}
-                <div className="lg:col-span-1">
-                     <h3 className="text-2xl font-bold mb-4 flex items-center gap-2 text-cyan-400">
-                        <UsersIcon /> Players ({tournament.players.length})
-                    </h3>
-                    <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 min-h-[200px] max-h-[400px] overflow-y-auto">
-                        {tournament.players.length > 0 ? (
-                            <ul className="space-y-2">
-                                {tournament.players.map(p => (
-                                    <li key={p.id} className="bg-gray-700 rounded p-2 text-sm">
-                                        {p.name}
-                                    </li>
-                                ))}
-                            </ul>
-                        ) : (
-                            <p className="text-gray-500 italic">No players have joined yet.</p>
-                        )}
-                    </div>
-                </div>
-
-                {/* Right Column: Matches or Active Game */}
-                <div className="lg:col-span-2">
-                    {activeMatch ? (
-                         <div>
-                             <button 
-                                onClick={() => setActiveMatchId(null)} 
-                                className="mb-4 bg-gray-600 hover:bg-gray-500 rounded-lg px-4 py-2 font-semibold transition-colors text-sm"
-                            >
-                                &larr; Back to Matches
+            ) : (
+                <>
+                    {canJoin && (
+                        <div className="text-center mb-6">
+                            <button onClick={() => setShowJoinModal(true)} className="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform hover:scale-105">
+                                Join Game Room
+                                {tournament.tournamentType !== 'FREE' && ` ($${tournament.participantPrice})`}
                             </button>
-                            <ChessGame
-                                match={activeMatch}
-                                onUpdateMatch={handleUpdateChessMatch}
-                                currentUser={currentUser}
-                            />
                         </div>
-                    ) : (
-                        <>
+                    )}
+                    {isPlayerRegistered && (
+                         <p className="text-center text-green-400 mb-6 font-semibold">You have joined this room!</p>
+                    )}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        {/* Left Column: Players */}
+                        <div className="lg:col-span-1">
+                             <h3 className="text-2xl font-bold mb-4 flex items-center gap-2 text-cyan-400">
+                                <UsersIcon /> Players ({tournament.players.length})
+                            </h3>
+                            <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 min-h-[200px] max-h-[400px] overflow-y-auto">
+                                {tournament.players.length > 0 ? (
+                                    <ul className="space-y-2">
+                                        {tournament.players.map(p => (
+                                            <li key={p.id} className="bg-gray-700 rounded p-2 text-sm">
+                                                {p.name}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p className="text-gray-500 italic">No players have joined yet.</p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Right Column: Matches */}
+                        <div className="lg:col-span-2">
                             <h3 className="text-2xl font-bold mb-4 text-cyan-400">Matches</h3>
                             <div className="space-y-6">
                                 <div>
@@ -147,10 +155,10 @@ const TournamentPublicView: React.FC<TournamentPublicViewProps> = ({ tournament,
                                     </div>
                                 </div>
                             </div>
-                        </>
-                    )}
-                </div>
-            </div>
+                        </div>
+                    </div>
+                </>
+            )}
             
             {showJoinModal && (
                 <JoinTournamentModal 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Tournament, Match, Player, User } from './types';
+import { Tournament, Match, Player, User, ChatMessage } from './types';
 import { UsersIcon, LinkIcon } from './components/IconComponents';
 import ChessGame from './components/ChessGame';
 import AddFixtureModal from './components/AddFixtureModal';
@@ -38,9 +38,16 @@ interface TournamentHostViewProps {
     currentUser: User;
     activeMatch: Match | null;
     setActiveMatchId: (matchId: string | null) => void;
+    chatMessages: ChatMessage[];
+    onSendMessage: (messageText: string) => void;
+    onDeleteMessage: (messageId: string) => void;
+    isHost: boolean;
 }
 
-const TournamentHostView: React.FC<TournamentHostViewProps> = ({ tournament, onTournamentUpdate, currentUser, activeMatch, setActiveMatchId }) => {
+const TournamentHostView: React.FC<TournamentHostViewProps> = ({ 
+    tournament, onTournamentUpdate, currentUser, activeMatch, setActiveMatchId,
+    chatMessages, onSendMessage, onDeleteMessage, isHost
+}) => {
     const [showCreateMatchModal, setShowCreateMatchModal] = useState(false);
     const [copied, setCopied] = useState(false);
 
@@ -91,96 +98,98 @@ const TournamentHostView: React.FC<TournamentHostViewProps> = ({ tournament, onT
 
     return (
         <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-4 sm:p-8 shadow-2xl shadow-cyan-500/10">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left Column: Players and Controls */}
-                <div className="lg:col-span-1 space-y-6">
-                    <div>
-                        <h3 className="text-2xl font-bold mb-4 text-cyan-400">Lobby</h3>
-                        <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
-                            <p className="text-gray-300 mb-4 text-sm">Players can join using the public link. You can start matches between any two joined players.</p>
-                            <button
-                                onClick={handleCopy}
-                                className="w-full flex items-center justify-center gap-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg px-4 py-2 font-semibold transition-colors"
-                            >
-                                <LinkIcon />
-                                {copied ? 'Link Copied!' : 'Copy Join Link'}
-                            </button>
-                        </div>
-                    </div>
-                     <div>
-                        <h3 className="text-xl font-bold mb-2 flex items-center gap-2 text-cyan-400">
-                            <UsersIcon /> Players ({tournament.players.length})
-                        </h3>
-                        <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 min-h-[200px] max-h-[400px] overflow-y-auto">
-                            {tournament.players.length > 0 ? (
-                                <ul className="space-y-2">
-                                    {tournament.players.map(p => (
-                                        <li key={p.id} className="bg-gray-700 rounded p-2 text-sm">
-                                            {p.name}
-                                        </li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <p className="text-gray-500 italic">No players have joined yet.</p>
-                            )}
-                        </div>
-                    </div>
+            {activeMatch ? (
+                <div>
+                     <button 
+                        onClick={() => setActiveMatchId(null)} 
+                        className="mb-4 bg-gray-600 hover:bg-gray-500 rounded-lg px-4 py-2 font-semibold transition-colors text-sm"
+                    >
+                        &larr; Back to Matches
+                    </button>
+                    <ChessGame
+                        match={activeMatch}
+                        onUpdateMatch={handleUpdateChessMatch}
+                        currentUser={currentUser}
+                        chatMessages={chatMessages}
+                        onSendMessage={onSendMessage}
+                        onDeleteMessage={onDeleteMessage}
+                        isHost={isHost}
+                    />
                 </div>
-
-                {/* Right Column: Matches or Active Game */}
-                <div className="lg:col-span-2">
-                    {activeMatch ? (
+            ) : (
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    {/* Left Column: Players and Controls */}
+                    <div className="lg:col-span-1 space-y-6">
                         <div>
-                             <button 
-                                onClick={() => setActiveMatchId(null)} 
-                                className="mb-4 bg-gray-600 hover:bg-gray-500 rounded-lg px-4 py-2 font-semibold transition-colors text-sm"
-                            >
-                                &larr; Back to Matches
-                            </button>
-                            <ChessGame
-                                match={activeMatch}
-                                onUpdateMatch={handleUpdateChessMatch}
-                                currentUser={currentUser}
-                            />
-                        </div>
-                    ) : (
-                        <>
-                            <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-2xl font-bold text-cyan-400">Matches</h3>
-                                <button 
-                                    onClick={() => setShowCreateMatchModal(true)} 
-                                    disabled={tournament.players.length < 2}
-                                    className="bg-green-600 hover:bg-green-500 font-bold py-2 px-4 rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed">
-                                    Create Match
+                            <h3 className="text-2xl font-bold mb-4 text-cyan-400">Lobby</h3>
+                            <div className="bg-gray-800 border border-gray-700 rounded-lg p-4">
+                                <p className="text-gray-300 mb-4 text-sm">Players can join using the public link. You can start matches between any two joined players.</p>
+                                <button
+                                    onClick={handleCopy}
+                                    className="w-full flex items-center justify-center gap-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg px-4 py-2 font-semibold transition-colors"
+                                >
+                                    <LinkIcon />
+                                    {copied ? 'Link Copied!' : 'Copy Join Link'}
                                 </button>
                             </div>
+                        </div>
+                         <div>
+                            <h3 className="text-xl font-bold mb-2 flex items-center gap-2 text-cyan-400">
+                                <UsersIcon /> Players ({tournament.players.length})
+                            </h3>
+                            <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 min-h-[200px] max-h-[400px] overflow-y-auto">
+                                {tournament.players.length > 0 ? (
+                                    <ul className="space-y-2">
+                                        {tournament.players.map(p => (
+                                            <li key={p.id} className="bg-gray-700 rounded p-2 text-sm">
+                                                {p.name}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p className="text-gray-500 italic">No players have joined yet.</p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
 
-                            <div className="space-y-6">
-                                <div>
-                                    <h4 className="font-semibold text-lg mb-2 text-gray-300">Ongoing Matches ({ongoingMatches.length})</h4>
-                                    <div className="space-y-2">
-                                        {ongoingMatches.length > 0 ? (
-                                            ongoingMatches.map(m => <MatchListItem key={m.id} match={m} onClick={setActiveMatchId} isClickable={true} />)
-                                        ) : (
-                                            <p className="text-gray-500 italic text-sm">No active matches.</p>
-                                        )}
-                                    </div>
-                                </div>
-                                <div>
-                                    <h4 className="font-semibold text-lg mb-2 text-gray-300">Completed Matches ({completedMatches.length})</h4>
-                                    <div className="space-y-2">
-                                        {completedMatches.length > 0 ? (
-                                            completedMatches.map(m => <MatchListItem key={m.id} match={m} onClick={setActiveMatchId} isClickable={true}/>)
-                                        ) : (
-                                            <p className="text-gray-500 italic text-sm">No matches completed yet.</p>
-                                        )}
-                                    </div>
+                    {/* Right Column: Matches */}
+                    <div className="lg:col-span-2">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-2xl font-bold text-cyan-400">Matches</h3>
+                            <button 
+                                onClick={() => setShowCreateMatchModal(true)} 
+                                disabled={tournament.players.length < 2}
+                                className="bg-green-600 hover:bg-green-500 font-bold py-2 px-4 rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed">
+                                Create Match
+                            </button>
+                        </div>
+
+                        <div className="space-y-6">
+                            <div>
+                                <h4 className="font-semibold text-lg mb-2 text-gray-300">Ongoing Matches ({ongoingMatches.length})</h4>
+                                <div className="space-y-2">
+                                    {ongoingMatches.length > 0 ? (
+                                        ongoingMatches.map(m => <MatchListItem key={m.id} match={m} onClick={setActiveMatchId} isClickable={true} />)
+                                    ) : (
+                                        <p className="text-gray-500 italic text-sm">No active matches.</p>
+                                    )}
                                 </div>
                             </div>
-                        </>
-                    )}
+                            <div>
+                                <h4 className="font-semibold text-lg mb-2 text-gray-300">Completed Matches ({completedMatches.length})</h4>
+                                <div className="space-y-2">
+                                    {completedMatches.length > 0 ? (
+                                        completedMatches.map(m => <MatchListItem key={m.id} match={m} onClick={setActiveMatchId} isClickable={true}/>)
+                                    ) : (
+                                        <p className="text-gray-500 italic text-sm">No matches completed yet.</p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </div>
+            )}
 
             {showCreateMatchModal && (
                 <AddFixtureModal 

@@ -1,18 +1,24 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
-import { Match, User } from '../types';
+import { Match, User, ChatMessage } from '../types';
+import Chat from './Chat';
+import { ChatIcon, CloseIcon } from './IconComponents';
 
 interface ChessGameProps {
     match: Match;
     onUpdateMatch: (updatedMatch: Match) => void;
     currentUser: User;
+    chatMessages: ChatMessage[];
+    onSendMessage: (messageText: string) => void;
+    onDeleteMessage?: (messageId: string) => void;
+    isHost: boolean;
 }
 
-const ChessGame: React.FC<ChessGameProps> = ({ match, onUpdateMatch, currentUser }) => {
-    // The game state is now derived directly from props, making this a controlled component.
-    // This fixes the bug where moves would appear to revert.
+const ChessGame: React.FC<ChessGameProps> = ({ 
+    match, onUpdateMatch, currentUser, 
+    chatMessages, onSendMessage, onDeleteMessage, isHost 
+}) => {
     const game = useMemo(() => {
         const g = new Chess();
         if (match.fen) {
@@ -26,23 +32,26 @@ const ChessGame: React.FC<ChessGameProps> = ({ match, onUpdateMatch, currentUser
     }, [match.fen]);
 
     const [status, setStatus] = useState('');
+    const [isChatVisible, setIsChatVisible] = useState(false);
 
     useEffect(() => {
         const updateStatus = () => {
             let moveColor = game.turn() === 'w' ? 'White' : 'Black';
+            
+            const whitePlayerName = match.homeTeam.name;
+            const blackPlayerName = match.awayTeam.name;
 
-            // Check for forfeit status first, using player names.
             if (match.pgn?.includes('{White forfeits}')) {
-                setStatus(`${match.homeTeam.name} forfeited. ${match.awayTeam.name} wins.`);
+                setStatus(`${whitePlayerName} forfeited. ${blackPlayerName} wins.`);
                 return;
             }
             if (match.pgn?.includes('{Black forfeits}')) {
-                setStatus(`${match.awayTeam.name} forfeited. ${match.homeTeam.name} wins.`);
+                setStatus(`${blackPlayerName} forfeited. ${whitePlayerName} wins.`);
                 return;
             }
 
             if (game.isCheckmate()) {
-                setStatus(`Checkmate! ${moveColor === 'White' ? 'Black' : 'White'} wins.`);
+                setStatus(`Checkmate! ${moveColor === 'White' ? blackPlayerName : whitePlayerName} wins.`);
             } else if (game.isDraw()) {
                 setStatus('Draw!');
             } else {
@@ -66,7 +75,6 @@ const ChessGame: React.FC<ChessGameProps> = ({ match, onUpdateMatch, currentUser
     }, [currentUser, match]);
 
     function onDrop(sourceSquare: string, targetSquare: string) {
-        // Create a copy of the game to safely test the move
         const gameCopy = new Chess(game.fen());
         let move = null;
 
@@ -74,24 +82,17 @@ const ChessGame: React.FC<ChessGameProps> = ({ match, onUpdateMatch, currentUser
             move = gameCopy.move({
                 from: sourceSquare,
                 to: targetSquare,
-                promotion: 'q' // NOTE: always promote to a queen for simplicity
+                promotion: 'q'
             });
         } catch (e) {
-             // This catch block handles invalid move structures, but move will be null for illegal chess moves.
             return false;
         }
 
-        // --- NEW: More robust validation ---
-        // 1. Is the move illegal in chess (e.g., moving through pieces)?
-        // 2. Is the current user a player in this match?
-        // 3. Is the game already over?
-        // 4. Did the player move a piece of their own color? (e.g., white player moving a white piece)
         const pieceColor = move?.color === 'w' ? 'white' : 'black';
         if (move === null || !isPlayer || match.played || playerColor !== pieceColor) {
             return false;
         }
         
-        // If all checks pass, propagate the update.
         const updatedMatch = { ...match };
         updatedMatch.fen = gameCopy.fen();
         updatedMatch.pgn = gameCopy.pgn();
@@ -101,14 +102,13 @@ const ChessGame: React.FC<ChessGameProps> = ({ match, onUpdateMatch, currentUser
             if (gameCopy.isCheckmate()) {
                 updatedMatch.homeScore = gameCopy.turn() === 'b' ? 1 : 0;
                 updatedMatch.awayScore = gameCopy.turn() === 'w' ? 1 : 0;
-            } else { // Draw
+            } else {
                 updatedMatch.homeScore = 0.5;
                 updatedMatch.awayScore = 0.5;
             }
         }
         
         onUpdateMatch(updatedMatch);
-
         return true;
     }
     
@@ -130,38 +130,91 @@ const ChessGame: React.FC<ChessGameProps> = ({ match, onUpdateMatch, currentUser
     };
 
     const boardOrientation = playerColor || 'white';
+    const isChatLocked = match.played;
 
     return (
-        <div>
-            <div className="flex justify-between items-center mb-2 text-sm text-gray-300 px-1">
-                <p className="font-semibold truncate">White: <span className="text-white">{match.homeTeam.name}</span></p>
-                <p className="font-semibold truncate">Black: <span className="text-white">{match.awayTeam.name}</span></p>
+        <div className="relative">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="lg:col-span-2">
+                    <div className="flex justify-between items-center mb-2 text-sm text-gray-300 px-1">
+                        <p className="font-semibold truncate">White: <span className="text-white">{match.homeTeam.name}</span></p>
+                        <p className="font-semibold truncate">Black: <span className="text-white">{match.awayTeam.name}</span></p>
+                    </div>
+
+                    <div className="w-full max-w-[400px] mx-auto my-2">
+                         <div className="aspect-square">
+                            <Chessboard
+                                 position={game.fen()}
+                                 onPieceDrop={onDrop}
+                                 boardOrientation={boardOrientation}
+                                 arePiecesDraggable={isPlayer && !match.played}
+                            />
+                        </div>
+                    </div>
+                    
+                    <div className="text-center font-semibold text-lg my-2 h-8 bg-gray-900/50 rounded-lg flex items-center justify-center">
+                        <p>{status}</p>
+                    </div>
+
+                    {isPlayer && !match.played && (
+                        <div className="mt-4 text-center">
+                            <button
+                                onClick={handleForfeit}
+                                className="bg-red-700 hover:bg-red-60-600 text-white font-semibold py-2 px-4 rounded-lg text-sm transition-colors"
+                            >
+                                Forfeit Match
+                            </button>
+                        </div>
+                    )}
+                </div>
+
+                <div className="hidden lg:block lg:col-span-1">
+                     <Chat 
+                        messages={chatMessages || []}
+                        currentUser={currentUser}
+                        onSendMessage={onSendMessage}
+                        isHost={isHost}
+                        onDeleteMessage={isHost ? onDeleteMessage : undefined}
+                        isLocked={isChatLocked}
+                    />
+                </div>
             </div>
 
-            <div className="w-full max-w-[400px] mx-auto my-2">
-                <Chessboard
-                     // FIX: The `react-chessboard` library uses the `position` prop to control the board's state.
-                     // Using the wrong prop name (`fen`) was causing moves to visually revert. This is now corrected.
-                     // @ts-expect-error The 'position' prop is correct for react-chessboard, but the type definitions for this project seem to be outdated.
-                     position={game.fen()}
-                     onPieceDrop={onDrop}
-                     boardOrientation={boardOrientation}
-                     arePiecesDraggable={isPlayer && !match.played}
-                />
-            </div>
-            
-            <div className="text-center font-semibold text-lg my-2 h-8 bg-gray-900/50 rounded-lg flex items-center justify-center">
-                <p>{status}</p>
+             {/* Mobile Chat FAB */}
+             <div className="lg:hidden fixed bottom-5 right-5 z-30">
+                <button 
+                    onClick={() => setIsChatVisible(true)}
+                    className="bg-cyan-600 hover:bg-cyan-500 text-white rounded-full p-4 shadow-lg transition-transform hover:scale-110"
+                    aria-label="Open Chat"
+                >
+                    <ChatIcon className="w-6 h-6" />
+                </button>
             </div>
 
-            {isPlayer && !match.played && (
-                <div className="mt-4 text-center">
-                    <button
-                        onClick={handleForfeit}
-                        className="bg-red-700 hover:bg-red-60-600 text-white font-semibold py-2 px-4 rounded-lg text-sm transition-colors"
-                    >
-                        Forfeit Match
-                    </button>
+            {/* Mobile Chat Overlay */}
+            {isChatVisible && (
+                <div className="lg:hidden fixed inset-0 z-40 transition-opacity">
+                    <div 
+                        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                        onClick={() => setIsChatVisible(false)}
+                    ></div>
+                    <div className="absolute bottom-0 left-0 right-0 h-[85%] bg-gray-900 border-t border-gray-700 shadow-2xl rounded-t-2xl p-4 flex flex-col">
+                        <div className="flex-shrink-0 flex items-center justify-between pb-4">
+                            <h3 className="text-xl font-bold text-cyan-400">Match Chat</h3>
+                            <button onClick={() => setIsChatVisible(false)} className="text-gray-400 hover:text-white p-1 rounded-full">
+                                <CloseIcon className="w-6 h-6" />
+                            </button>
+                        </div>
+                        <Chat 
+                            messages={chatMessages || []}
+                            currentUser={currentUser}
+                            onSendMessage={onSendMessage}
+                            isHost={isHost}
+                            onDeleteMessage={isHost ? onDeleteMessage : undefined}
+                            hideTitle={true}
+                            isLocked={isChatLocked}
+                        />
+                    </div>
                 </div>
             )}
         </div>
