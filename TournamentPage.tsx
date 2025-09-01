@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { getTournamentById, updateTournament } from './utils/storage';
-import { Tournament, ChatMessage } from './types';
+import { Tournament, ChatMessage, Match } from './types';
 import { User } from './utils/auth';
 import TournamentHostView from './TournamentAdmin';
 import TournamentPublicView from './TournamentViewer';
@@ -18,6 +18,7 @@ interface TournamentPageProps {
 const TournamentPage: React.FC<TournamentPageProps> = ({ tournamentId, currentUser }) => {
     const [tournament, setTournament] = useState<Tournament | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [activeMatchId, setActiveMatchId] = useState<string | null>(null);
 
     const loadTournament = useCallback(async () => {
         const loadedTournament = await getTournamentById(tournamentId);
@@ -86,6 +87,7 @@ const TournamentPage: React.FC<TournamentPageProps> = ({ tournamentId, currentUs
     }
 
     const isHost = currentUser.username === tournament.createdBy;
+    const activeMatch = tournament.matches.find(m => m.id === activeMatchId) || null;
 
     return (
         <div className="p-4 sm:p-8">
@@ -108,9 +110,21 @@ const TournamentPage: React.FC<TournamentPageProps> = ({ tournamentId, currentUs
                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div className="lg:col-span-2">
                              {isHost ? (
-                                <TournamentHostView tournament={tournament} onTournamentUpdate={handleTournamentUpdate} currentUser={currentUser} />
+                                <TournamentHostView 
+                                    tournament={tournament} 
+                                    onTournamentUpdate={handleTournamentUpdate} 
+                                    currentUser={currentUser}
+                                    activeMatch={activeMatch}
+                                    setActiveMatchId={setActiveMatchId}
+                                />
                             ) : (
-                                <TournamentPublicView tournament={tournament} currentUser={currentUser} onTournamentUpdate={handleTournamentUpdate} />
+                                <TournamentPublicView 
+                                    tournament={tournament} 
+                                    currentUser={currentUser} 
+                                    onTournamentUpdate={handleTournamentUpdate} 
+                                    activeMatch={activeMatch}
+                                    setActiveMatchId={setActiveMatchId}
+                                />
                             )}
                         </div>
                         <div className="lg:col-span-1">

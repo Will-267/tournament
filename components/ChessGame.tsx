@@ -2,16 +2,14 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import { Match, User } from '../types';
-import { CloseIcon } from './IconComponents';
 
 interface ChessGameProps {
     match: Match;
-    onClose: () => void;
     onUpdateMatch: (updatedMatch: Match) => void;
     currentUser: User;
 }
 
-const ChessGame: React.FC<ChessGameProps> = ({ match, onClose, onUpdateMatch, currentUser }) => {
+const ChessGame: React.FC<ChessGameProps> = ({ match, onUpdateMatch, currentUser }) => {
     const [game, setGame] = useState(new Chess());
     const [status, setStatus] = useState('');
 
@@ -105,39 +103,24 @@ const ChessGame: React.FC<ChessGameProps> = ({ match, onClose, onUpdateMatch, cu
     const boardOrientation = playerColor || 'white';
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 z-50 backdrop-blur-sm" onClick={onClose}>
-            <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-xl w-full max-w-lg text-white" onClick={(e) => e.stopPropagation()}>
-                <div className="p-6">
-                    <div className="flex justify-between items-center mb-4">
-                        <h2 className="text-xl font-bold text-cyan-400 truncate">
-                            {match.homeTeam.name} vs {match.awayTeam.name}
-                        </h2>
-                        <button onClick={onClose} className="text-gray-400 hover:text-white">
-                            <CloseIcon />
-                        </button>
-                    </div>
+        <div>
+            <div className="flex justify-between items-center mb-2 text-sm text-gray-300 px-1">
+                <p className="font-semibold truncate">White: <span className="text-white">{match.homeTeam.name}</span></p>
+                <p className="font-semibold truncate">Black: <span className="text-white">{match.awayTeam.name}</span></p>
+            </div>
 
-                    <div className="w-full max-w-[400px] mx-auto my-4">
-                        <Chessboard
-                            // FIX: The error "Property 'fen' does not exist" indicates that this version of
-                            // react-chessboard uses the `position` prop for the FEN string.
-                             position={game.fen()}
-                             onPieceDrop={onDrop}
-                             boardOrientation={boardOrientation}
-                             arePiecesDraggable={isPlayer && !game.isGameOver()}
-                        />
-                    </div>
-                    
-                    <div className="text-center font-semibold text-lg my-2 h-6">
-                        <p>{status}</p>
-                    </div>
-
-                    <div className="flex justify-end gap-3 mt-4">
-                        <button onClick={onClose} className="bg-gray-600 hover:bg-gray-500 rounded-lg px-6 py-2 font-semibold transition-colors">
-                            {game.isGameOver() ? 'Close' : 'Close Match'}
-                        </button>
-                    </div>
-                </div>
+            <div className="w-full max-w-[400px] mx-auto my-2">
+                <Chessboard
+                     // FIX: The 'position' prop for react-chessboard was likely renamed to 'boardPosition' in the installed version, causing a type error.
+                     boardPosition={game.fen()}
+                     onPieceDrop={onDrop}
+                     boardOrientation={boardOrientation}
+                     arePiecesDraggable={isPlayer && !game.isGameOver()}
+                />
+            </div>
+            
+            <div className="text-center font-semibold text-lg my-2 h-6 bg-gray-900/50 rounded-lg flex items-center justify-center">
+                <p>{status}</p>
             </div>
         </div>
     );

@@ -5,7 +5,7 @@ import ChessGame from './components/ChessGame';
 import AddFixtureModal from './components/AddFixtureModal';
 import { Chess } from 'chess.js';
 
-const MatchListItem: React.FC<{ match: Match; onClick: (match: Match) => void; isClickable: boolean; }> = ({ match, onClick, isClickable }) => {
+const MatchListItem: React.FC<{ match: Match; onClick: (matchId: string) => void; isClickable: boolean; }> = ({ match, onClick, isClickable }) => {
     const getPlayerClasses = (score: number | null, otherScore: number | null) => {
         let classes = "flex-1 truncate";
         if (match.played && score !== null && otherScore !== null) {
@@ -21,7 +21,7 @@ const MatchListItem: React.FC<{ match: Match; onClick: (match: Match) => void; i
     const clickableClasses = isClickable ? " hover:bg-gray-700/50 cursor-pointer" : " cursor-default";
 
     return (
-        <button onClick={() => isClickable && onClick(match)} className={baseClasses + clickableClasses} disabled={!isClickable}>
+        <button onClick={() => isClickable && onClick(match.id)} className={baseClasses + clickableClasses} disabled={!isClickable}>
             <span className={getPlayerClasses(match.homeScore, match.awayScore) + " text-right"}>{match.homeTeam.name}</span>
             <span className={`font-bold px-3 rounded mx-3 text-xs ${match.played ? 'bg-cyan-600' : 'bg-gray-600'}`}>
                 {match.played ? `${match.homeScore} - ${match.awayScore}` : 'vs'}
@@ -36,10 +36,11 @@ interface TournamentHostViewProps {
     tournament: Tournament;
     onTournamentUpdate: (updatedTournament: Tournament) => void;
     currentUser: User;
+    activeMatch: Match | null;
+    setActiveMatchId: (matchId: string | null) => void;
 }
 
-const TournamentHostView: React.FC<TournamentHostViewProps> = ({ tournament, onTournamentUpdate, currentUser }) => {
-    const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
+const TournamentHostView: React.FC<TournamentHostViewProps> = ({ tournament, onTournamentUpdate, currentUser, activeMatch, setActiveMatchId }) => {
     const [showCreateMatchModal, setShowCreateMatchModal] = useState(false);
     const [copied, setCopied] = useState(false);
 
@@ -57,9 +58,11 @@ const TournamentHostView: React.FC<TournamentHostViewProps> = ({ tournament, onT
         };
         onTournamentUpdate(updatedTournament);
 
-        // Close modal if game is over
+        // If game is over, go back to lobby view after a short delay
         if (updatedMatch.played) {
-            setSelectedMatch(null);
+            setTimeout(() => {
+                setActiveMatchId(null);
+            }, 2000);
         }
     };
     
@@ -131,51 +134,60 @@ const TournamentHostView: React.FC<TournamentHostViewProps> = ({ tournament, onT
                     </div>
                 </div>
 
-                {/* Right Column: Matches */}
+                {/* Right Column: Matches or Active Game */}
                 <div className="lg:col-span-2">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-2xl font-bold text-cyan-400">Matches</h3>
-                        <button 
-                            onClick={() => setShowCreateMatchModal(true)} 
-                            disabled={tournament.players.length < 2}
-                            className="bg-green-600 hover:bg-green-500 font-bold py-2 px-4 rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed">
-                            Create Match
-                        </button>
-                    </div>
-
-                    <div className="space-y-6">
+                    {activeMatch ? (
                         <div>
-                            <h4 className="font-semibold text-lg mb-2 text-gray-300">Ongoing Matches ({ongoingMatches.length})</h4>
-                            <div className="space-y-2">
-                                {ongoingMatches.length > 0 ? (
-                                    ongoingMatches.map(m => <MatchListItem key={m.id} match={m} onClick={setSelectedMatch} isClickable={true} />)
-                                ) : (
-                                    <p className="text-gray-500 italic text-sm">No active matches.</p>
-                                )}
-                            </div>
+                             <button 
+                                onClick={() => setActiveMatchId(null)} 
+                                className="mb-4 bg-gray-600 hover:bg-gray-500 rounded-lg px-4 py-2 font-semibold transition-colors text-sm"
+                            >
+                                &larr; Back to Matches
+                            </button>
+                            <ChessGame
+                                match={activeMatch}
+                                onUpdateMatch={handleUpdateChessMatch}
+                                currentUser={currentUser}
+                            />
                         </div>
-                         <div>
-                            <h4 className="font-semibold text-lg mb-2 text-gray-300">Completed Matches ({completedMatches.length})</h4>
-                            <div className="space-y-2">
-                                {completedMatches.length > 0 ? (
-                                    completedMatches.map(m => <MatchListItem key={m.id} match={m} onClick={setSelectedMatch} isClickable={true}/>)
-                                ) : (
-                                    <p className="text-gray-500 italic text-sm">No matches completed yet.</p>
-                                )}
+                    ) : (
+                        <>
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-2xl font-bold text-cyan-400">Matches</h3>
+                                <button 
+                                    onClick={() => setShowCreateMatchModal(true)} 
+                                    disabled={tournament.players.length < 2}
+                                    className="bg-green-600 hover:bg-green-500 font-bold py-2 px-4 rounded-lg disabled:bg-gray-500 disabled:cursor-not-allowed">
+                                    Create Match
+                                </button>
                             </div>
-                        </div>
-                    </div>
+
+                            <div className="space-y-6">
+                                <div>
+                                    <h4 className="font-semibold text-lg mb-2 text-gray-300">Ongoing Matches ({ongoingMatches.length})</h4>
+                                    <div className="space-y-2">
+                                        {ongoingMatches.length > 0 ? (
+                                            ongoingMatches.map(m => <MatchListItem key={m.id} match={m} onClick={setActiveMatchId} isClickable={true} />)
+                                        ) : (
+                                            <p className="text-gray-500 italic text-sm">No active matches.</p>
+                                        )}
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 className="font-semibold text-lg mb-2 text-gray-300">Completed Matches ({completedMatches.length})</h4>
+                                    <div className="space-y-2">
+                                        {completedMatches.length > 0 ? (
+                                            completedMatches.map(m => <MatchListItem key={m.id} match={m} onClick={setActiveMatchId} isClickable={true}/>)
+                                        ) : (
+                                            <p className="text-gray-500 italic text-sm">No matches completed yet.</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </div>
             </div>
-
-            {selectedMatch && (
-                <ChessGame
-                    match={selectedMatch}
-                    onClose={() => setSelectedMatch(null)}
-                    onUpdateMatch={handleUpdateChessMatch}
-                    currentUser={currentUser}
-                />
-            )}
 
             {showCreateMatchModal && (
                 <AddFixtureModal 
