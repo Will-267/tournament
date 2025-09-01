@@ -113,8 +113,8 @@ const ChessGame: React.FC<ChessGameProps> = ({ match, onUpdateMatch, currentUser
 
             <div className="w-full max-w-[400px] mx-auto my-2">
                 <Chessboard
-                    // FIX: The `react-chessboard` component uses the `position` prop, not `fen`, to set the board state.
-                     position={game.fen()}
+                    // FIX: The `position` prop is not available in the version of `react-chessboard` used in this project. The correct prop to set the board's position from a FEN string is `fen`.
+                     fen={game.fen()}
                      onPieceDrop={onDrop}
                      boardOrientation={boardOrientation}
                      arePiecesDraggable={isPlayer && !game.isGameOver()}
