@@ -8,6 +8,7 @@ import ShareLink from './components/ShareLink';
 import { websocketClient } from './websocket';
 import Chat from './components/Chat';
 import NotFoundPage from './NotFoundPage';
+import { ChatIcon } from './components/IconComponents';
 
 interface TournamentPageProps {
     tournamentId: string;
@@ -18,6 +19,7 @@ const TournamentPage: React.FC<TournamentPageProps> = ({ tournamentId, currentUs
     const [tournament, setTournament] = useState<Tournament | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [activeMatchId, setActiveMatchId] = useState<string | null>(null);
+    const [isChatVisible, setIsChatVisible] = useState(false);
 
     const loadTournament = useCallback(async () => {
         const loadedTournament = await getTournamentById(tournamentId);
@@ -126,7 +128,7 @@ const TournamentPage: React.FC<TournamentPageProps> = ({ tournamentId, currentUs
                                 />
                             )}
                         </div>
-                        <div className="lg:col-span-1">
+                        <div className="hidden lg:block lg:col-span-1">
                             <Chat 
                                 messages={tournament.chatMessages || []}
                                 currentUser={currentUser}
@@ -137,6 +139,38 @@ const TournamentPage: React.FC<TournamentPageProps> = ({ tournamentId, currentUs
                         </div>
                     </div>
                 </main>
+
+                {/* Mobile Chat FAB */}
+                <div className="lg:hidden fixed bottom-5 right-5 z-30">
+                    <button 
+                        onClick={() => setIsChatVisible(true)}
+                        className="bg-cyan-600 hover:bg-cyan-500 text-white rounded-full p-4 shadow-lg transition-transform hover:scale-110"
+                        aria-label="Open Chat"
+                    >
+                        <ChatIcon className="w-6 h-6" />
+                    </button>
+                </div>
+
+                {/* Mobile Chat Overlay */}
+                {isChatVisible && (
+                    <div className="lg:hidden fixed inset-0 z-40 transition-opacity">
+                        {/* Backdrop */}
+                        <div 
+                            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+                            onClick={() => setIsChatVisible(false)}
+                        ></div>
+                        {/* Chat Panel */}
+                        <div className="absolute top-0 right-0 bottom-0 w-full max-w-sm bg-gray-900 shadow-xl p-4">
+                            <Chat 
+                                messages={tournament.chatMessages || []}
+                                currentUser={currentUser}
+                                onSendMessage={handleSendChatMessage}
+                                isHost={isHost}
+                                onDeleteMessage={isHost ? handleDeleteChatMessage : undefined}
+                            />
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );

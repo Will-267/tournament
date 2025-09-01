@@ -32,7 +32,7 @@ const Chat: React.FC<ChatProps> = ({ messages, currentUser, isHost, onSendMessag
     };
 
     return (
-        <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 flex flex-col h-[500px] max-h-[70vh]">
+        <div className="bg-gray-800 border border-gray-700 rounded-lg p-4 flex flex-col h-full">
             <h3 className="text-xl font-bold mb-4 text-cyan-400 flex-shrink-0">Group Chat</h3>
             <div className="flex-grow overflow-y-auto pr-2">
                 {messages.length === 0 ? (
