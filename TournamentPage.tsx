@@ -9,6 +9,7 @@ import { websocketClient } from './websocket';
 import ExportPDF from './components/ExportPDF';
 import VideoStream from './components/VideoStream';
 import Chat from './components/Chat';
+import NotFoundPage from './NotFoundPage';
 
 interface TournamentPageProps {
     tournamentId: string;
@@ -82,7 +83,7 @@ const TournamentPage: React.FC<TournamentPageProps> = ({ tournamentId, currentUs
     }
     
     if (!tournament) {
-        return <div className="text-center p-8">Tournament not found.</div>;
+        return <NotFoundPage />;
     }
 
     const isHost = currentUser.username === tournament.createdBy;

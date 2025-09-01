@@ -3,6 +3,7 @@ import { getCurrentUser, User } from './utils/auth';
 import AuthPage from './AuthPage';
 import Dashboard from './Dashboard';
 import TournamentPage from './TournamentPage';
+import NotFoundPage from './NotFoundPage';
 
 const App: React.FC = () => {
     const [currentUser, setCurrentUser] = useState<User | null>(getCurrentUser());
@@ -31,13 +32,22 @@ const App: React.FC = () => {
     }
 
     const renderContent = () => {
-        const parts = hash.replace(/^#\//, '').split('/');
-        
-        if (parts[0] === 'tournaments' && parts[1]) {
-            return <TournamentPage tournamentId={parts[1]} currentUser={currentUser} />;
+        const path = hash.replace(/^#/, '');
+
+        // Handle root/dashboard route
+        if (path === '/' || path === '') {
+            return <Dashboard currentUser={currentUser} />;
+        }
+
+        // Handle tournament route
+        const tournamentMatch = path.match(/^\/tournaments\/([^/]+)/);
+        if (tournamentMatch) {
+            const tournamentId = tournamentMatch[1];
+            return <TournamentPage tournamentId={tournamentId} currentUser={currentUser} />;
         }
         
-        return <Dashboard currentUser={currentUser} />;
+        // Fallback for any other route
+        return <NotFoundPage />;
     };
 
     return <div className="min-h-screen bg-gray-900 text-gray-200 font-sans">{renderContent()}</div>;
