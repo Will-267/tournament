@@ -31,6 +31,16 @@ const ChessGame: React.FC<ChessGameProps> = ({ match, onUpdateMatch, currentUser
         const updateStatus = () => {
             let moveColor = game.turn() === 'w' ? 'White' : 'Black';
 
+            // Check for forfeit status first.
+            if (match.pgn?.includes('{White forfeits}')) {
+                setStatus('White forfeited. Black wins.');
+                return;
+            }
+            if (match.pgn?.includes('{Black forfeits}')) {
+                setStatus('Black forfeited. White wins.');
+                return;
+            }
+
             if (game.isCheckmate()) {
                 setStatus(`Checkmate! ${moveColor === 'White' ? 'Black' : 'White'} wins.`);
             } else if (game.isDraw()) {
@@ -43,7 +53,7 @@ const ChessGame: React.FC<ChessGameProps> = ({ match, onUpdateMatch, currentUser
             }
         };
         updateStatus();
-    }, [game]);
+    }, [game, match.pgn]);
 
     const isPlayer = useMemo(() => {
         return currentUser.id === match.homeTeam.id || currentUser.id === match.awayTeam.id;

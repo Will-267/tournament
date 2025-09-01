@@ -63,13 +63,6 @@ const TournamentPublicView: React.FC<TournamentPublicViewProps> = ({ tournament,
             matches: tournament.matches.map(m => m.id === updatedMatch.id ? updatedMatch : m)
         };
         onTournamentUpdate(updatedTournament);
-
-        // If game is over, go back to lobby view after a short delay
-        if (updatedMatch.played) {
-            setTimeout(() => {
-                setActiveMatchId(null);
-            }, 2000);
-        }
     };
 
     const isPlayerRegistered = useMemo(() => tournament.players.some(p => p.id === currentUser?.id), [tournament.players, currentUser]);
