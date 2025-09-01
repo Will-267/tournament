@@ -11,7 +11,7 @@ import KnockoutBracket from './components/KnockoutBracket';
 import ScoreModal from './components/ScoreModal';
 import AddFixtureModal from './components/AddFixtureModal';
 
-const MIN_PLAYERS = 4;
+const MIN_PLAYERS = 2;
 
 const LobbyRegistration: React.FC<{ tournament: Tournament, onStart: () => void }> = ({ tournament, onStart }) => {
     const [copied, setCopied] = useState(false);
@@ -221,7 +221,7 @@ const ManualSetupRegistration: React.FC<{ tournament: Tournament, onUpdate: (t: 
                 <button onClick={onStart} disabled={!canStart} className="bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-8 rounded-lg text-lg transition-transform hover:scale-105 w-full max-w-md flex items-center justify-center gap-2 disabled:bg-gray-500 disabled:cursor-not-allowed disabled:scale-100">
                     Lock Groups & Start Tournament <ArrowRightIcon />
                 </button>
-                 {!canStart && <p className="text-xs text-gray-400 mt-2">Requires min. 4 players, all players assigned to a group, and each group to have at least 2 players.</p>}
+                 {!canStart && <p className="text-xs text-gray-400 mt-2">{`Requires min. ${MIN_PLAYERS} players, all players assigned to a group, and each group to have at least 2 players.`}</p>}
             </div>
         </div>
     );
@@ -251,12 +251,20 @@ const TournamentHostView: React.FC<TournamentHostViewProps> = ({ tournament, onT
     };
     
     const handleStartLobbyTournament = () => {
-         // This is a placeholder for a more complex group generation logic
-        const playersPerGroup = Math.ceil(tournament.players.length / 2);
         const shuffledPlayers = [...tournament.players].sort(() => 0.5 - Math.random());
-        const groupA: Group = { id: 'g1', name: 'Group A', players: shuffledPlayers.slice(0, playersPerGroup) };
-        const groupB: Group = { id: 'g2', name: 'Group B', players: shuffledPlayers.slice(playersPerGroup) };
-        const groups = [groupA, groupB].filter(g => g.players.length > 0);
+        let groups: Group[];
+
+        // If there are fewer than 4 players, put them all in one group to ensure matches can be played.
+        if (tournament.players.length < 4) {
+            const groupA: Group = { id: 'g1', name: 'Group A', players: shuffledPlayers };
+            groups = [groupA];
+        } else {
+            // Otherwise, split them into two groups as before.
+            const playersPerGroup = Math.ceil(tournament.players.length / 2);
+            const groupA: Group = { id: 'g1', name: 'Group A', players: shuffledPlayers.slice(0, playersPerGroup) };
+            const groupB: Group = { id: 'g2', name: 'Group B', players: shuffledPlayers.slice(playersPerGroup) };
+            groups = [groupA, groupB].filter(g => g.players.length > 0);
+        }
         
         onTournamentUpdate({ 
             ...tournament, 
