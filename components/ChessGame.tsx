@@ -144,6 +144,9 @@ const ChessGame: React.FC<ChessGameProps> = ({
                     <div className="w-full max-w-[400px] mx-auto my-2">
                          <div className="aspect-square">
                             <Chessboard
+                                 // FIX: Added the required `id` prop. The `react-chessboard` component
+                                 // throws a misleading error about the `position` prop if `id` is missing.
+                                 id={match.id}
                                  position={game.fen()}
                                  onPieceDrop={onDrop}
                                  boardOrientation={boardOrientation}
