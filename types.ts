@@ -27,6 +27,8 @@ export interface Match {
     played: boolean;
     group?: string;
     round?: string;
+    fen?: string; // Forsyth-Edwards Notation for chess board state
+    pgn?: string; // Portable Game Notation for move history
 }
 
 export interface Group {

@@ -1,10 +1,11 @@
 import React, { useMemo, useState } from 'react';
-import { Tournament, TournamentStage, User, Player } from './types';
+import { Tournament, TournamentStage, User, Player, Match } from './types';
 import { calculateAllStandings } from './utils/tournament';
 import GroupStageView from './components/GroupStageView';
 import KnockoutBracket from './components/KnockoutBracket';
 import { TrophyIcon, UsersIcon } from './components/IconComponents';
 import JoinTournamentModal from './components/JoinTournamentModal';
+import ChessGame from './components/ChessGame';
 
 interface TournamentPublicViewProps {
     tournament: Tournament;
@@ -35,6 +36,8 @@ const RegistrationView: React.FC<{ tournament: Tournament }> = ({ tournament }) 
 const TournamentPublicView: React.FC<TournamentPublicViewProps> = ({ tournament, currentUser, onTournamentUpdate }) => {
     const [showJoinModal, setShowJoinModal] = useState(false);
     const [isJoining, setIsJoining] = useState(false);
+    const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
+
 
     const standings = useMemo(() => {
         if ((tournament.stage === TournamentStage.GROUP_STAGE || tournament.stage === TournamentStage.KNOCKOUT_STAGE) && tournament.groups.length > 0) {
@@ -71,6 +74,12 @@ const TournamentPublicView: React.FC<TournamentPublicViewProps> = ({ tournament,
         setShowJoinModal(false);
         setIsJoining(false);
     };
+
+    const handleMatchClick = (match: Match) => {
+        if (tournament.game === 'Chess') {
+            setSelectedMatch(match);
+        }
+    };
     
     const isPlayerRegistered = useMemo(() => tournament.players.some(p => p.id === currentUser?.id), [tournament.players, currentUser]);
     const canJoin = currentUser && !isPlayerRegistered && tournament.stage === TournamentStage.REGISTRATION;
@@ -96,14 +105,14 @@ const TournamentPublicView: React.FC<TournamentPublicViewProps> = ({ tournament,
                             groups={tournament.groups} 
                             standings={standings} 
                             matches={tournament.matches} 
-                            onMatchClick={() => {}} 
+                            onMatchClick={handleMatchClick} 
                             isHostView={false} 
                         />;
             case TournamentStage.KNOCKOUT_STAGE:
                 return (
                     <div>
                         <h2 className="text-4xl font-bold text-center mb-8 text-cyan-400">Knockout Stage</h2>
-                        <KnockoutBracket bracket={tournament.knockoutMatches} onMatchClick={() => {}} />
+                        <KnockoutBracket bracket={tournament.knockoutMatches} onMatchClick={handleMatchClick} />
                     </div>
                 );
             default:
@@ -135,6 +144,15 @@ const TournamentPublicView: React.FC<TournamentPublicViewProps> = ({ tournament,
                     onClose={() => setShowJoinModal(false)}
                     onJoin={handleJoin}
                     isJoining={isJoining}
+                />
+            )}
+
+            {selectedMatch && tournament.game === 'Chess' && (
+                <ChessGame
+                    match={selectedMatch}
+                    onClose={() => setSelectedMatch(null)}
+                    onUpdateMatch={() => {}} // Spectators cannot update the match
+                    currentUser={currentUser}
                 />
             )}
         </div>

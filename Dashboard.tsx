@@ -31,7 +31,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
     const handleCreateTournament = async (e: React.FormEvent) => {
         e.preventDefault();
         const trimmedName = newTournamentName.trim();
-        if (!trimmedName || isCreating || !currentUser) return;
+        if (!trimmedName || !newTournamentGame || isCreating || !currentUser) return;
 
         setIsCreating(true);
         setCreateError('');
@@ -39,7 +39,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
         try {
             const newTournamentData: Omit<Tournament, 'id'> = {
                 name: trimmedName,
-                game: newTournamentGame.trim() || 'Not specified',
+                game: newTournamentGame,
                 createdBy: currentUser.username,
                 stage: TournamentStage.REGISTRATION,
                 tournamentType: newTournamentType,
@@ -154,25 +154,27 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
                     <div className="bg-gray-800 border border-gray-700 rounded-lg shadow-xl w-full max-w-md text-white p-6">
                         <h2 className="text-2xl font-bold mb-4">Create New Tournament</h2>
                         <form onSubmit={handleCreateTournament} className="space-y-4">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="sm:col-span-2">
-                                    <label className="block mb-1 font-semibold" htmlFor="tournamentName">Tournament Name</label>
-                                    <input
-                                        id="tournamentName" type="text" value={newTournamentName}
-                                        onChange={(e) => setNewTournamentName(e.target.value)}
-                                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-                                        placeholder="e.g., Weekend Champions Cup" required autoFocus
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block mb-1 font-semibold" htmlFor="tournamentGame">Game</label>
-                                    <input
-                                        id="tournamentGame" type="text" value={newTournamentGame}
-                                        onChange={(e) => setNewTournamentGame(e.target.value)}
-                                        className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-                                        placeholder="e.g., Chess, PES" required
-                                    />
-                                </div>
+                             <div>
+                                <label className="block mb-1 font-semibold" htmlFor="tournamentName">Tournament Name</label>
+                                <input
+                                    id="tournamentName" type="text" value={newTournamentName}
+                                    onChange={(e) => setNewTournamentName(e.target.value)}
+                                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                                    placeholder="e.g., Weekend Champions Cup" required autoFocus
+                                />
+                            </div>
+                            <div>
+                                <label className="block mb-1 font-semibold" htmlFor="tournamentGame">Game</label>
+                                <select
+                                    id="tournamentGame" value={newTournamentGame}
+                                    onChange={(e) => setNewTournamentGame(e.target.value)}
+                                    className="w-full bg-gray-700 border border-gray-600 rounded-lg px-4 py-2 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                                    required
+                                >
+                                    <option value="" disabled>Select a game type</option>
+                                    <option value="Score-Based">Score-Based (e.g., PES, FIFA)</option>
+                                    <option value="Chess">Chess</option>
+                                </select>
                             </div>
                              <div>
                                 <label className="block mb-1 font-semibold">Tournament Type</label>
@@ -211,7 +213,7 @@ const Dashboard: React.FC<DashboardProps> = ({ currentUser }) => {
                             
                             <div className="flex justify-end gap-3 pt-2">
                                 <button type="button" onClick={() => setShowCreateModal(false)} className="bg-gray-600 hover:bg-gray-500 rounded-lg px-6 py-2 font-semibold transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed" disabled={isCreating}>Cancel</button>
-                                <button type="submit" className="bg-cyan-600 hover:bg-cyan-500 rounded-lg px-6 py-2 font-semibold transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed" disabled={!newTournamentName.trim() || isCreating}>
+                                <button type="submit" className="bg-cyan-600 hover:bg-cyan-500 rounded-lg px-6 py-2 font-semibold transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed" disabled={!newTournamentName.trim() || !newTournamentGame || isCreating}>
                                     {isCreating ? 'Creating...' : 'Create'}
                                 </button>
                             </div>

@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Tournament, Match, TournamentStage, Player, Group } from './types';
+import { Tournament, Match, TournamentStage, Player, Group, User } from './types';
 import { 
     calculateAllStandings, 
     determineKnockoutQualifiers, 
@@ -9,7 +9,9 @@ import { TrophyIcon, ArrowRightIcon, UsersIcon, CloseIcon, LinkIcon } from './co
 import GroupStageView from './components/GroupStageView';
 import KnockoutBracket from './components/KnockoutBracket';
 import ScoreModal from './components/ScoreModal';
+import ChessGame from './components/ChessGame';
 import AddFixtureModal from './components/AddFixtureModal';
+import { Chess } from 'chess.js';
 
 const MIN_PLAYERS = 2;
 
@@ -230,9 +232,10 @@ const ManualSetupRegistration: React.FC<{ tournament: Tournament, onUpdate: (t: 
 interface TournamentHostViewProps {
     tournament: Tournament;
     onTournamentUpdate: (updatedTournament: Tournament) => void;
+    currentUser: User;
 }
 
-const TournamentHostView: React.FC<TournamentHostViewProps> = ({ tournament, onTournamentUpdate }) => {
+const TournamentHostView: React.FC<TournamentHostViewProps> = ({ tournament, onTournamentUpdate, currentUser }) => {
     const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
     const [showAddFixtureModalForGroup, setShowAddFixtureModalForGroup] = useState<string | null>(null);
 
@@ -315,6 +318,23 @@ const TournamentHostView: React.FC<TournamentHostViewProps> = ({ tournament, onT
         setSelectedMatch(null);
     };
     
+    const handleUpdateChessMatch = (updatedMatch: Match) => {
+        let updatedTournament = { ...tournament };
+
+        const updateMatchInList = (matches: Match[]) => {
+            return matches.map(m => m.id === updatedMatch.id ? updatedMatch : m);
+        };
+
+        if (tournament.stage === TournamentStage.GROUP_STAGE) {
+            updatedTournament.matches = updateMatchInList(tournament.matches);
+        } else if (tournament.stage === TournamentStage.KNOCKOUT_STAGE) {
+            const newRounds = tournament.knockoutMatches.rounds.map(round => updateMatchInList(round));
+            updatedTournament.knockoutMatches = { ...tournament.knockoutMatches, rounds: newRounds };
+        }
+        
+        onTournamentUpdate(updatedTournament);
+    };
+    
     const handleSaveNewFixture = (groupId: string, homePlayerId: string, awayPlayerId: string) => {
         const homeTeam = tournament.players.find(p => p.id === homePlayerId);
         const awayTeam = tournament.players.find(p => p.id === awayPlayerId);
@@ -330,6 +350,12 @@ const TournamentHostView: React.FC<TournamentHostViewProps> = ({ tournament, onT
             played: false,
             group: groupId,
         };
+
+        if (tournament.game === 'Chess') {
+            const chess = new Chess();
+            newMatch.fen = chess.fen();
+            newMatch.pgn = chess.pgn();
+        }
 
         const updatedTournament = {
             ...tournament,
@@ -377,12 +403,9 @@ const TournamentHostView: React.FC<TournamentHostViewProps> = ({ tournament, onT
     const renderContent = () => {
         switch (tournament.stage) {
             case TournamentStage.REGISTRATION:
-                // For now, both tournament types have the same registration view for the host.
-                // This can be expanded later. "Manual" type is not present in creation anymore but old data might have it.
                 if (tournament.tournamentType === 'FREE' || tournament.tournamentType === 'PAID_PARTICIPANTS' || tournament.tournamentType === 'EXCLUSIVE') {
                     return <LobbyRegistration tournament={tournament} onStart={handleStartLobbyTournament} />;
                 }
-                // Fallback for old 'MANUAL' type tournaments
                 return <ManualSetupRegistration tournament={tournament} onUpdate={onTournamentUpdate} onStart={handleStartManualTournament} />;
 
             case TournamentStage.GROUP_STAGE:
@@ -424,7 +447,16 @@ const TournamentHostView: React.FC<TournamentHostViewProps> = ({ tournament, onT
     return (
         <div className="bg-gray-800/50 border border-gray-700 rounded-2xl p-4 sm:p-8 shadow-2xl shadow-cyan-500/10">
             {renderContent()}
-            {selectedMatch && (
+
+            {selectedMatch && tournament.game === 'Chess' && (
+                <ChessGame
+                    match={selectedMatch}
+                    onClose={() => setSelectedMatch(null)}
+                    onUpdateMatch={handleUpdateChessMatch}
+                    currentUser={currentUser}
+                />
+            )}
+            {selectedMatch && tournament.game !== 'Chess' && (
                 <ScoreModal 
                     match={selectedMatch} 
                     onClose={() => setSelectedMatch(null)} 
@@ -432,6 +464,7 @@ const TournamentHostView: React.FC<TournamentHostViewProps> = ({ tournament, onT
                     isKnockout={tournament.stage === TournamentStage.KNOCKOUT_STAGE}
                 />
             )}
+
              {showAddFixtureModalForGroup && groupForAddModal && (
                 <AddFixtureModal 
                     group={groupForAddModal}
