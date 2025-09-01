@@ -119,9 +119,9 @@ const ChessGame: React.FC<ChessGameProps> = ({ match, onClose, onUpdateMatch, cu
 
                     <div className="w-full max-w-[400px] mx-auto my-4">
                         <Chessboard
-                            // FIX: The error "Property 'position' does not exist" suggests this project uses
-                            // an older version of react-chessboard where the prop for the FEN string was `fen`.
-                             fen={game.fen()}
+                            // FIX: The error "Property 'fen' does not exist" indicates that this version of
+                            // react-chessboard uses the `position` prop for the FEN string.
+                             position={game.fen()}
                              onPieceDrop={onDrop}
                              boardOrientation={boardOrientation}
                              arePiecesDraggable={isPlayer && !game.isGameOver()}
