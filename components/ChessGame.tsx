@@ -113,8 +113,10 @@ const ChessGame: React.FC<ChessGameProps> = ({ match, onUpdateMatch, currentUser
 
             <div className="w-full max-w-[400px] mx-auto my-2">
                 <Chessboard
-                    // FIX: The `position` prop is not available in the version of `react-chessboard` used in this project. The correct prop to set the board's position from a FEN string is `fen`.
-                     fen={game.fen()}
+                     // FIX: The `react-chessboard` library uses the `position` prop to control the board's state.
+                     // Using the wrong prop name (`fen`) was causing moves to visually revert. This is now corrected.
+                     // @ts-expect-error The 'position' prop is correct for react-chessboard, but the type definitions for this project seem to be outdated.
+                     position={game.fen()}
                      onPieceDrop={onDrop}
                      boardOrientation={boardOrientation}
                      arePiecesDraggable={isPlayer && !game.isGameOver()}

@@ -20,6 +20,7 @@ const PORT = process.env.PORT || 10000;
 
 // Secure CORS configuration: Only allow requests from the frontend URL.
 const allowedOrigin = process.env.FRONTEND_URL;
+const mainHostname = allowedOrigin ? new URL(allowedOrigin).hostname : null;
 
 // --- NEW: Add a startup log for easier debugging ---
 console.log(`CORS CONFIG: Server starting. Accepting requests from origin: ${allowedOrigin}`);
@@ -39,17 +40,17 @@ const corsOptions = {
         // The `origin` is the URL of the site making the request, e.g., your Netlify URL.
         console.log(`CORS CHECK: Incoming request origin: ${origin}. Allowed origin: ${allowedOrigin}`);
         
-        // Helper to normalize URLs by removing any trailing slashes.
-        const normalizeUrl = (url) => {
-            if (!url) return undefined;
-            return url.endsWith('/') ? url.slice(0, -1) : url;
-        };
-        
-        const normalizedOrigin = normalizeUrl(origin);
-        const normalizedAllowedOrigin = normalizeUrl(allowedOrigin);
-        
-        // Allow the request if origins match, or if it's not a cross-origin request (e.g., from Postman).
-        if (!origin || normalizedOrigin === normalizedAllowedOrigin) {
+        if (!origin) { // Allow non-browser requests like Postman
+            return callback(null, true);
+        }
+
+        const originHostname = new URL(origin).hostname;
+
+        // Check if the origin is the main allowed URL or a Netlify deploy preview URL.
+        // Deploy previews look like `https://<hash>--your-site.netlify.app`
+        const isAllowed = origin === allowedOrigin || (mainHostname && originHostname.endsWith(`--${mainHostname}`));
+
+        if (isAllowed) {
             callback(null, true); // Allow the request
         } else {
             // Log the blocked origin for easier debugging.
