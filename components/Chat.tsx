@@ -9,9 +9,10 @@ interface ChatProps {
     onSendMessage: (messageText: string) => void;
     onDeleteMessage?: (messageId: string) => void;
     hideTitle?: boolean;
+    isLocked?: boolean;
 }
 
-const Chat: React.FC<ChatProps> = ({ messages, currentUser, isHost, onSendMessage, onDeleteMessage, hideTitle }) => {
+const Chat: React.FC<ChatProps> = ({ messages, currentUser, isHost, onSendMessage, onDeleteMessage, hideTitle, isLocked }) => {
     const [newMessage, setNewMessage] = useState('');
     const messagesEndRef = useRef<null | HTMLDivElement>(null);
 
@@ -26,7 +27,7 @@ const Chat: React.FC<ChatProps> = ({ messages, currentUser, isHost, onSendMessag
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const trimmedMessage = newMessage.trim();
-        if (trimmedMessage) {
+        if (trimmedMessage && !isLocked) {
             onSendMessage(trimmedMessage);
             setNewMessage('');
         }
@@ -72,10 +73,17 @@ const Chat: React.FC<ChatProps> = ({ messages, currentUser, isHost, onSendMessag
                         type="text"
                         value={newMessage}
                         onChange={e => setNewMessage(e.target.value)}
-                        placeholder="Type a message..."
-                        className="flex-grow bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                        placeholder={isLocked ? "Chat is locked for completed games" : "Type a message..."}
+                        className="flex-grow bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-cyan-500 focus:outline-none disabled:bg-gray-800 disabled:cursor-not-allowed"
+                        disabled={isLocked}
                     />
-                    <button type="submit" className="bg-cyan-600 hover:bg-cyan-500 rounded-lg px-4 py-2 font-semibold text-sm">Send</button>
+                    <button 
+                        type="submit" 
+                        className="bg-cyan-600 hover:bg-cyan-500 rounded-lg px-4 py-2 font-semibold text-sm disabled:bg-gray-500 disabled:cursor-not-allowed"
+                        disabled={isLocked}
+                    >
+                        Send
+                    </button>
                 </div>
             </form>
         </div>

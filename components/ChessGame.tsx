@@ -87,7 +87,7 @@ const ChessGame: React.FC<ChessGameProps> = ({ match, onUpdateMatch, currentUser
         // 3. Is the game already over?
         // 4. Did the player move a piece of their own color? (e.g., white player moving a white piece)
         const pieceColor = move?.color === 'w' ? 'white' : 'black';
-        if (move === null || !isPlayer || game.isGameOver() || playerColor !== pieceColor) {
+        if (move === null || !isPlayer || match.played || playerColor !== pieceColor) {
             return false;
         }
         
@@ -113,7 +113,7 @@ const ChessGame: React.FC<ChessGameProps> = ({ match, onUpdateMatch, currentUser
     }
     
     const handleForfeit = () => {
-        if (!isPlayer || game.isGameOver()) return;
+        if (!isPlayer || match.played) return;
 
         if (window.confirm("Are you sure you want to forfeit this match? This action cannot be undone.")) {
             const isHomePlayer = currentUser.id === match.homeTeam.id;
@@ -146,7 +146,7 @@ const ChessGame: React.FC<ChessGameProps> = ({ match, onUpdateMatch, currentUser
                      position={game.fen()}
                      onPieceDrop={onDrop}
                      boardOrientation={boardOrientation}
-                     arePiecesDraggable={isPlayer && !game.isGameOver()}
+                     arePiecesDraggable={isPlayer && !match.played}
                 />
             </div>
             
@@ -154,11 +154,11 @@ const ChessGame: React.FC<ChessGameProps> = ({ match, onUpdateMatch, currentUser
                 <p>{status}</p>
             </div>
 
-            {isPlayer && !game.isGameOver() && (
+            {isPlayer && !match.played && (
                 <div className="mt-4 text-center">
                     <button
                         onClick={handleForfeit}
-                        className="bg-red-700 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg text-sm transition-colors"
+                        className="bg-red-700 hover:bg-red-60-600 text-white font-semibold py-2 px-4 rounded-lg text-sm transition-colors"
                     >
                         Forfeit Match
                     </button>

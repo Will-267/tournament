@@ -89,6 +89,7 @@ const TournamentPage: React.FC<TournamentPageProps> = ({ tournamentId, currentUs
 
     const isHost = currentUser.username === tournament.createdBy;
     const activeMatch = tournament.matches.find(m => m.id === activeMatchId) || null;
+    const isChatLocked = !!(activeMatch && activeMatch.played);
 
     return (
         <div className="p-4 sm:p-8">
@@ -135,6 +136,7 @@ const TournamentPage: React.FC<TournamentPageProps> = ({ tournamentId, currentUs
                                 onSendMessage={handleSendChatMessage}
                                 isHost={isHost}
                                 onDeleteMessage={isHost ? handleDeleteChatMessage : undefined}
+                                isLocked={isChatLocked}
                             />
                         </div>
                     </div>
@@ -174,6 +176,7 @@ const TournamentPage: React.FC<TournamentPageProps> = ({ tournamentId, currentUs
                                 isHost={isHost}
                                 onDeleteMessage={isHost ? handleDeleteChatMessage : undefined}
                                 hideTitle={true}
+                                isLocked={isChatLocked}
                             />
                         </div>
                     </div>
