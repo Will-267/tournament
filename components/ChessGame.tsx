@@ -144,9 +144,11 @@ const ChessGame: React.FC<ChessGameProps> = ({
                     <div className="w-full max-w-[400px] mx-auto my-2">
                          <div className="aspect-square">
                             <Chessboard
-                                 // FIX: Added the required `id` prop. The `react-chessboard` component
-                                 // throws a misleading error about the `position` prop if `id` is missing.
-                                 id={match.id}
+                                 // FIX: Replaced unsupported `id` prop with `key`. The `id` prop was causing
+                                 // a TypeScript error. Using `key` ensures the component re-mounts when the
+                                 // match changes, which was likely the original developer's intent to prevent
+                                 // state-related bugs inside the component.
+                                 key={match.id}
                                  position={game.fen()}
                                  onPieceDrop={onDrop}
                                  boardOrientation={boardOrientation}
