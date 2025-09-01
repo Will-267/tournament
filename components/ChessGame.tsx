@@ -31,13 +31,13 @@ const ChessGame: React.FC<ChessGameProps> = ({ match, onUpdateMatch, currentUser
         const updateStatus = () => {
             let moveColor = game.turn() === 'w' ? 'White' : 'Black';
 
-            // Check for forfeit status first.
+            // Check for forfeit status first, using player names.
             if (match.pgn?.includes('{White forfeits}')) {
-                setStatus('White forfeited. Black wins.');
+                setStatus(`${match.homeTeam.name} forfeited. ${match.awayTeam.name} wins.`);
                 return;
             }
             if (match.pgn?.includes('{Black forfeits}')) {
-                setStatus('Black forfeited. White wins.');
+                setStatus(`${match.awayTeam.name} forfeited. ${match.homeTeam.name} wins.`);
                 return;
             }
 
@@ -53,7 +53,7 @@ const ChessGame: React.FC<ChessGameProps> = ({ match, onUpdateMatch, currentUser
             }
         };
         updateStatus();
-    }, [game, match.pgn]);
+    }, [game, match]);
 
     const isPlayer = useMemo(() => {
         return currentUser.id === match.homeTeam.id || currentUser.id === match.awayTeam.id;
